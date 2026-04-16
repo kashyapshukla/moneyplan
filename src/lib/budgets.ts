@@ -177,6 +177,7 @@ export async function getSpendingAverages(
 
   // Count total transactions across 3 months
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const [countRow] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(transactions)
@@ -184,6 +185,7 @@ export async function getSpendingAverages(
       and(
         eq(transactions.userId, userId),
         gte(transactions.date, threeMonthsAgo),
+        lte(transactions.date, currentMonthStart),
         sql`${transactions.amount} < 0`
       )
     );
