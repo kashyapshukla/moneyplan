@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { listBudgetsWithSpending } from "@/lib/budgets";
 import { BudgetsList } from "@/components/budgets/budgets-list";
 import { MonthNav } from "@/components/budgets/month-nav";
+import { OnboardingBanner } from "@/components/budgets/onboarding-banner";
 
 export default async function BudgetsPage({
   searchParams,
@@ -41,6 +42,10 @@ export default async function BudgetsPage({
           </span>
         )}
       </div>
+
+      {budgets.length === 0 && (
+        <OnboardingBanner month={month} year={year} />
+      )}
 
       <BudgetsList initialBudgets={budgets} month={month} year={year} />
     </div>
