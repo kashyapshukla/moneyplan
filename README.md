@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoneyPlan
+
+A personal finance web app to track net worth, transactions, budgets, and get AI-powered financial insights.
+
+## Features
+
+- **Dashboard** — Monthly income/expense summary, spending by category, budget health score
+- **Transactions** — Manual entry + CSV upload with automatic Gemini AI categorisation
+- **Net Worth** — Track assets & liabilities, visualise trends over time
+- **Budgets** — Set monthly limits per category, track progress with alerts
+- **AI Chat** — Natural language queries about your finances powered by Gemini
+- **Reports** — 6-month history with 3-month spending forecast
+
+## Tech Stack
+
+- **Framework** — Next.js 14 (App Router)
+- **Database** — Neon Postgres (serverless)
+- **ORM** — Drizzle ORM
+- **Auth** — NextAuth.js v5 (Google OAuth + email/password)
+- **UI** — Tailwind CSS + shadcn/ui
+- **Charts** — Recharts
+- **AI** — Google Gemini
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+git clone https://github.com/your-username/moneyplan.git
+cd moneyplan
+npm install
+```
+
+### 2. Set up environment variables
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and fill in all values (see comments in the file for where to get each one).
+
+### 3. Set up the database
+
+Create a free Postgres database at [neon.tech](https://neon.tech), paste the connection string into `DATABASE_URL`, then run migrations:
+
+```bash
+npm run db:migrate
+```
+
+### 4. Set up Google OAuth
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
+2. Create an OAuth 2.0 Client ID (Web application)
+3. Add `http://localhost:3000/api/auth/callback/google` as an Authorized Redirect URI
+4. Copy the Client ID and Secret into `.env.local`
+
+### 5. Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run db:generate` | Generate Drizzle migrations from schema changes |
+| `npm run db:migrate` | Apply pending migrations to the database |
+| `npm run db:studio` | Open Drizzle Studio (database UI) |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── (app)/          # Authenticated app pages
+│   │   ├── dashboard/
+│   │   ├── transactions/
+│   │   ├── net-worth/
+│   │   ├── budgets/
+│   │   ├── ai-chat/
+│   │   └── reports/
+│   ├── (auth)/         # Auth pages (sign-in)
+│   └── api/            # API routes
+├── components/
+│   ├── ui/             # Base UI components (Button, Dialog, Avatar…)
+│   ├── layout/         # Sidebar, header
+│   ├── dashboard/
+│   ├── net-worth/
+│   ├── budgets/
+│   ├── ai-chat/
+│   └── reports/
+└── lib/
+    ├── schema.ts       # Drizzle database schema
+    ├── db.ts           # Database client
+    ├── auth.ts         # NextAuth config
+    ├── accounts.ts     # Net worth logic
+    ├── transactions.ts # Transaction helpers
+    ├── budgets.ts      # Budget logic
+    ├── dashboard.ts    # Dashboard aggregations
+    ├── reports.ts      # Reports & forecast
+    └── gemini.ts       # Gemini AI integration
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Deploy to [Vercel](https://vercel.com) — add the same environment variables from `.env.example` in the Vercel dashboard under Project Settings → Environment Variables.
 
-## Deploy on Vercel
+## Security
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- All secrets live in `.env.local` which is listed in `.gitignore` and never committed
+- All app routes are protected by NextAuth middleware
+- Database queries are always scoped to the authenticated user's ID

@@ -6,6 +6,17 @@ export type TransactionCategory =
   | "Food" | "Housing" | "Transport" | "Health"
   | "Entertainment" | "Shopping" | "Income" | "Other";
 
+export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
+  Food: "Food & Dining",
+  Housing: "Housing",
+  Transport: "Transport",
+  Health: "Health",
+  Entertainment: "Entertainment",
+  Shopping: "Shopping",
+  Income: "Income",
+  Other: "Other",
+};
+
 export type TransactionSource = "csv_upload" | "plaid" | "manual";
 
 export interface NewTransaction {
