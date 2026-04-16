@@ -1,5 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 const VALID_CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
   "Entertainment", "Shopping", "Income", "Other",
@@ -7,8 +5,8 @@ const VALID_CATEGORIES = [
 
 type Category = (typeof VALID_CATEGORIES)[number];
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const VERTEX_ENDPOINT =
+  "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash-lite:generateContent";
 
 export async function categorizeTransactions(
   transactions: { description: string; amount: number }[]
@@ -25,9 +23,23 @@ Reply ONLY with a JSON array like: [{"index": 0, "category": "Food"}, ...]
 No explanation, no markdown, just the JSON array.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
-    const clean = text.replace(/^```json?\n?/, "").replace(/\n?```$/, "");
+    const res = await fetch(`${VERTEX_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0, responseMimeType: "application/json" },
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("Gemini API error:", await res.text());
+      return transactions.map(() => "Other");
+    }
+
+    const json = await res.json();
+    const text: string = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const clean = text.trim().replace(/^```json?\n?/, "").replace(/\n?```$/, "");
     const parsed: { index: number; category: string }[] = JSON.parse(clean);
 
     return transactions.map((_, i) => {
@@ -35,7 +47,8 @@ No explanation, no markdown, just the JSON array.`;
       const cat = match?.category as Category;
       return VALID_CATEGORIES.includes(cat) ? cat : "Other";
     });
-  } catch {
+  } catch (err) {
+    console.error("Gemini categorization failed:", err);
     return transactions.map(() => "Other");
   }
 }
