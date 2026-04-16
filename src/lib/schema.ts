@@ -7,6 +7,9 @@ import {
   pgEnum,
   uuid,
   date,
+  primaryKey,
+  uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const accountTypeEnum = pgEnum("account_type", [
@@ -61,59 +64,87 @@ export const accounts = pgTable("accounts", {
   lastUpdated: timestamp("last_updated", { mode: "date" }).defaultNow().notNull(),
 });
 
-export const transactions = pgTable("transactions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  date: date("date", { mode: "date" }).notNull(),
-  description: text("description").notNull(),
-  category: categoryEnum("category").notNull().default("Other"),
-  source: transactionSourceEnum("source").notNull().default("manual"),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-});
+export const transactions = pgTable(
+  "transactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    date: date("date", { mode: "date" }).notNull(),
+    description: text("description").notNull(),
+    category: categoryEnum("category").notNull().default("Other"),
+    source: transactionSourceEnum("source").notNull().default("manual"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userDateIdx: index("transactions_user_date_idx").on(table.userId, table.date),
+  })
+);
 
-export const budgets = pgTable("budgets", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  category: categoryEnum("category").notNull(),
-  monthlyLimit: numeric("monthly_limit", { precision: 12, scale: 2 }).notNull(),
-  month: integer("month").notNull(), // 1–12
-  year: integer("year").notNull(),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-});
+export const budgets = pgTable(
+  "budgets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    category: categoryEnum("category").notNull(),
+    monthlyLimit: numeric("monthly_limit", { precision: 12, scale: 2 }).notNull(),
+    month: integer("month").notNull(), // 1–12
+    year: integer("year").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userCategoryMonthYear: uniqueIndex("budgets_user_category_month_year_idx").on(
+      table.userId, table.category, table.month, table.year
+    ),
+  })
+);
 
-export const netWorthSnapshots = pgTable("net_worth_snapshots", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  totalAssets: numeric("total_assets", { precision: 14, scale: 2 }).notNull(),
-  totalLiabilities: numeric("total_liabilities", { precision: 14, scale: 2 }).notNull(),
-  netWorth: numeric("net_worth", { precision: 14, scale: 2 }).notNull(),
-  snapshotDate: date("snapshot_date", { mode: "date" }).notNull(),
-});
+export const netWorthSnapshots = pgTable(
+  "net_worth_snapshots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    totalAssets: numeric("total_assets", { precision: 14, scale: 2 }).notNull(),
+    totalLiabilities: numeric("total_liabilities", { precision: 14, scale: 2 }).notNull(),
+    // Denormalized for read performance: always equals totalAssets - totalLiabilities.
+    // Application layer is responsible for keeping this consistent on write.
+    netWorth: numeric("net_worth", { precision: 14, scale: 2 }).notNull(),
+    snapshotDate: date("snapshot_date", { mode: "date" }).notNull(),
+  },
+  (table) => ({
+    userDateIdx: index("net_worth_snapshots_user_date_idx").on(table.userId, table.snapshotDate),
+  })
+);
 
 // NextAuth required tables (Drizzle Adapter)
-export const authAccounts = pgTable("auth_accounts", {
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  provider: text("provider").notNull(),
-  providerAccountId: text("provider_account_id").notNull(),
-  refresh_token: text("refresh_token"),
-  access_token: text("access_token"),
-  expires_at: integer("expires_at"),
-  token_type: text("token_type"),
-  scope: text("scope"),
-  id_token: text("id_token"),
-  session_state: text("session_state"),
-});
+export const authAccounts = pgTable(
+  "auth_accounts",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
+  })
+);
 
 export const sessions = pgTable("sessions", {
   sessionToken: text("session_token").primaryKey(),
@@ -123,8 +154,14 @@ export const sessions = pgTable("sessions", {
   expires: timestamp("expires", { mode: "date" }).notNull(),
 });
 
-export const verificationTokens = pgTable("verification_tokens", {
-  identifier: text("identifier").notNull(),
-  token: text("token").notNull(),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
+export const verificationTokens = pgTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.identifier, table.token] }),
+  })
+);
