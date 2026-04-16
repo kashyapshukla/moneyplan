@@ -3,6 +3,9 @@ import { NextRequest } from "next/server";
 import { getSpendingAverages } from "@/lib/budgets";
 import { suggestBudgets, BudgetSseEvent } from "@/lib/gemini";
 
+// Force dynamic rendering so Next.js never caches this SSE route
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -57,6 +60,8 @@ export async function POST(req: NextRequest) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      // Disable nginx/proxy buffering so chunks reach the client immediately
+      "X-Accel-Buffering": "no",
     },
   });
 }
