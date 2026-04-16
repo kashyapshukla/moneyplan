@@ -60,6 +60,7 @@ export function BudgetAgentPanel({
     setThinkingText("");
     setProposals([]);
     setErrorMsg("");
+    setApplyProgress(0);
 
     try {
       const res = await fetch("/api/ai/suggest-budgets", {
@@ -124,20 +125,32 @@ export function BudgetAgentPanel({
     setAgentState("applying");
     let applied = 0;
 
+    let failed = 0;
     for (const proposal of proposals) {
       const limit = editedLimits[proposal.category] ?? proposal.suggestedLimit;
-      await fetch("/api/budgets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: proposal.category,
-          monthlyLimit: limit,
-          month,
-          year,
-        }),
-      });
+      try {
+        const res = await fetch("/api/budgets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: proposal.category,
+            monthlyLimit: limit,
+            month,
+            year,
+          }),
+        });
+        if (!res.ok) failed++;
+      } catch {
+        failed++;
+      }
       applied++;
       setApplyProgress(Math.round((applied / proposals.length) * 100));
+    }
+
+    if (failed > 0) {
+      setErrorMsg(`${failed} budget(s) failed to save. Please try again or set them manually.`);
+      setAgentState("error");
+      return;
     }
 
     setAgentState("done");
