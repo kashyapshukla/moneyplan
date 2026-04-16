@@ -155,7 +155,7 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
       : fullText;
 
     // Stream thinking text word by word (simulate streaming since Gemini non-streaming)
-    const words = thinkingText.split(" ");
+    const words = thinkingText.split(/\s+/).filter(Boolean);
     for (let i = 0; i < words.length; i += 5) {
       onEvent({ type: "thinking", text: words.slice(i, i + 5).join(" ") + " " });
       // tiny yield to allow SSE flush
@@ -168,11 +168,28 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
     }
 
     const rawJson = proposalMatch[1].trim();
-    const parsed = JSON.parse(rawJson) as ProposedBudget[];
+    const parsed: unknown = JSON.parse(rawJson);
 
-    // Validate all 7 categories present
+    if (!Array.isArray(parsed)) {
+      onEvent({ type: "error", message: "AI returned an unexpected format. Please try again." });
+      return;
+    }
+
+    // Validate categories and field types
     const validCategories = new Set(EXPENSE_CATEGORIES as readonly string[]);
-    const filtered = parsed.filter((b) => validCategories.has(b.category));
+    const filtered = (parsed as ProposedBudget[]).filter(
+      (b) =>
+        validCategories.has(b.category) &&
+        typeof b.suggestedLimit === "number" &&
+        isFinite(b.suggestedLimit) &&
+        typeof b.reasoning === "string" &&
+        (b.source === "actual" || b.source === "rule")
+    );
+
+    if (filtered.length === 0) {
+      onEvent({ type: "error", message: "AI did not return valid budget categories. Please try again." });
+      return;
+    }
 
     onEvent({ type: "proposal", budgets: filtered });
     onEvent({ type: "done" });
