@@ -150,3 +150,53 @@ export async function deleteBudget(userId: string, id: string): Promise<void> {
     .delete(budgets)
     .where(and(eq(budgets.id, id), eq(budgets.userId, userId)));
 }
+
+export type SpendingAverages = {
+  byCategory: Record<string, number>;   // avg monthly spend per expense category
+  totalTransactions: number;            // total tx count across 3 months
+  confidence: "high" | "low";          // high = >=10 tx, low = <10
+};
+
+export async function getSpendingAverages(
+  userId: string
+): Promise<SpendingAverages> {
+  const now = new Date();
+  const byCategory: Record<string, number> = {};
+  let totalTransactions = 0;
+
+  // Collect spending for each of the last 3 months
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+    const spending = await getSpendingByCategory(userId, month, year);
+    for (const [cat, amt] of Object.entries(spending)) {
+      byCategory[cat] = (byCategory[cat] ?? 0) + amt;
+    }
+  }
+
+  // Count total transactions across 3 months
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  const [countRow] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.date, threeMonthsAgo),
+        sql`${transactions.amount} < 0`
+      )
+    );
+  totalTransactions = Number(countRow?.count ?? 0);
+
+  // Average over 3 months
+  for (const cat of Object.keys(byCategory)) {
+    byCategory[cat] = Math.round(byCategory[cat] / 3);
+  }
+
+  return {
+    byCategory,
+    totalTransactions,
+    confidence: totalTransactions >= 10 ? "high" : "low",
+  };
+}
