@@ -9,7 +9,12 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const body = await req.json();
+  let body: { monthlyIncome?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 });
+  }
   const monthlyIncome = Number(body.monthlyIncome);
 
   if (!monthlyIncome || monthlyIncome <= 0) {
@@ -29,8 +34,8 @@ export async function POST(req: NextRequest) {
 
   const writer = stream.writable.getWriter();
 
-  function sendEvent(event: BudgetSseEvent) {
-    writer.write(`data: ${JSON.stringify(event)}\n\n`);
+  async function sendEvent(event: BudgetSseEvent) {
+    await writer.write(`data: ${JSON.stringify(event)}\n\n`);
   }
 
   // Run agent in background, stream events
@@ -39,9 +44,13 @@ export async function POST(req: NextRequest) {
     spendingAverages: byCategory,
     confidence,
     onEvent: sendEvent,
-  }).finally(() => {
-    writer.close();
-  });
+  })
+    .catch(() => {
+      sendEvent({ type: "error", message: "Something went wrong. Please try again." });
+    })
+    .finally(() => {
+      writer.close();
+    });
 
   return new Response(stream.readable, {
     headers: {
