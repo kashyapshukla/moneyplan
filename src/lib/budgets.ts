@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { budgets, transactions } from "./schema";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, lt, sql } from "drizzle-orm";
 import { TransactionCategory } from "./transactions";
 
 export type Budget = {
@@ -164,12 +164,14 @@ export async function getSpendingAverages(
   const byCategory: Record<string, number> = {};
   let totalTransactions = 0;
 
-  // Collect spending for each of the last 3 months
-  for (let i = 1; i <= 3; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const month = d.getMonth() + 1;
-    const year = d.getFullYear();
-    const spending = await getSpendingByCategory(userId, month, year);
+  // Fetch last 3 months in parallel
+  const monthResults = await Promise.all(
+    [1, 2, 3].map((i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return getSpendingByCategory(userId, d.getMonth() + 1, d.getFullYear());
+    })
+  );
+  for (const spending of monthResults) {
     for (const [cat, amt] of Object.entries(spending)) {
       byCategory[cat] = (byCategory[cat] ?? 0) + amt;
     }
@@ -179,13 +181,13 @@ export async function getSpendingAverages(
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const [countRow] = await db
-    .select({ count: sql<number>`COUNT(*)` })
+    .select({ count: sql<string>`COUNT(*)` })
     .from(transactions)
     .where(
       and(
         eq(transactions.userId, userId),
         gte(transactions.date, threeMonthsAgo),
-        lte(transactions.date, currentMonthStart),
+        lt(transactions.date, currentMonthStart),
         sql`${transactions.amount} < 0`
       )
     );
