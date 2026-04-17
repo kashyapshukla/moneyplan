@@ -204,3 +204,62 @@ export async function getSpendingAverages(
     confidence: totalTransactions >= 10 ? "high" : "low",
   };
 }
+
+// ── Auto-detect monthly income from transaction history ───────────────────────
+// Sums all positive-amount transactions (money IN) over the last 3 months
+// and returns the monthly average. Returns null if no income found.
+
+export async function getMonthlyIncomeFromTransactions(
+  userId: string
+): Promise<{ monthlyIncome: number; monthsUsed: number } | null> {
+  const now = new Date();
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [row] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${transactions.amount}::numeric), 0)`,
+      count: sql<string>`COUNT(*)`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.date, threeMonthsAgo),
+        lt(transactions.date, currentMonthStart),
+        sql`${transactions.amount}::numeric > 0`   // positive = money IN
+      )
+    );
+
+  const total = Number(row?.total ?? 0);
+  const count = Number(row?.count ?? 0);
+
+  if (count === 0 || total <= 0) return null;
+
+  // Work out how many of the 3 months actually had income
+  const monthResults = await Promise.all(
+    [1, 2, 3].map(async (i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const [r] = await db
+        .select({ s: sql<string>`COALESCE(SUM(${transactions.amount}::numeric), 0)` })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            gte(transactions.date, monthStart),
+            lt(transactions.date, monthEnd),
+            sql`${transactions.amount}::numeric > 0`
+          )
+        );
+      return Number(r?.s ?? 0);
+    })
+  );
+
+  const monthsWithIncome = monthResults.filter((m) => m > 0).length;
+  if (monthsWithIncome === 0) return null;
+
+  const monthlyIncome = Math.round(total / monthsWithIncome);
+  return { monthlyIncome, monthsUsed: monthsWithIncome };
+}
