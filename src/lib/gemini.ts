@@ -148,27 +148,62 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
       return;
     }
 
-    // Split thinking from proposal
-    const proposalMatch = fullText.match(/<proposal>([\s\S]*?)<\/proposal>/);
-    const thinkingText = proposalMatch
-      ? fullText.slice(0, fullText.indexOf("<proposal>")).trim()
-      : fullText;
+    // ── Extract JSON from the response ───────────────────────────────────────
+    // Gemini is inconsistent — it might use <proposal> tags, ```json blocks,
+    // or just output a bare JSON array. Try all three strategies in order.
+
+    let rawJson: string | null = null;
+    let thinkingText = fullText;
+
+    // Strategy 1: <proposal>...</proposal> tags
+    const proposalTagMatch = fullText.match(/<proposal>([\s\S]*?)<\/proposal>/i);
+    if (proposalTagMatch) {
+      rawJson = proposalTagMatch[1].trim();
+      thinkingText = fullText.slice(0, fullText.indexOf("<proposal>")).trim();
+    }
+
+    // Strategy 2: ```json ... ``` or ``` ... ``` code block
+    if (!rawJson) {
+      const codeBlockMatch = fullText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      if (codeBlockMatch) {
+        rawJson = codeBlockMatch[1].trim();
+        thinkingText = fullText.slice(0, fullText.indexOf("```")).trim();
+      }
+    }
+
+    // Strategy 3: find the first [ ... ] JSON array anywhere in the text
+    if (!rawJson) {
+      const arrayMatch = fullText.match(/(\[[\s\S]*\])/);
+      if (arrayMatch) {
+        rawJson = arrayMatch[1].trim();
+        thinkingText = fullText.slice(0, fullText.indexOf(arrayMatch[1])).trim();
+      }
+    }
 
     // Stream thinking text word by word (simulate streaming since Gemini non-streaming)
     const words = thinkingText.split(/\s+/).filter(Boolean);
     for (let i = 0; i < words.length; i += 5) {
       onEvent({ type: "thinking", text: words.slice(i, i + 5).join(" ") + " " });
-      // tiny yield to allow SSE flush
       await new Promise((r) => setTimeout(r, 30));
     }
 
-    if (!proposalMatch) {
+    if (!rawJson) {
+      console.error("suggestBudgets: no JSON found in response:", fullText.slice(0, 300));
       onEvent({ type: "error", message: "AI did not return a budget proposal. Please try again." });
       return;
     }
 
-    const rawJson = proposalMatch[1].trim();
-    const parsed: unknown = JSON.parse(rawJson);
+    // Strip any residual markdown (Gemini sometimes nests ```json inside <proposal>)
+    const cleanJson = rawJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(cleanJson);
+    } catch {
+      console.error("suggestBudgets: JSON.parse failed on:", cleanJson.slice(0, 200));
+      onEvent({ type: "error", message: "AI returned malformed JSON. Please try again." });
+      return;
+    }
 
     if (!Array.isArray(parsed)) {
       onEvent({ type: "error", message: "AI returned an unexpected format. Please try again." });
@@ -178,18 +213,18 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
     const validCategories = new Set(EXPENSE_CATEGORIES as readonly string[]);
 
     // Normalise items — Gemini returns suggestedLimit as string or number,
-    // and source as non-standard values like "framework", "income_based", "rule-based"
+    // source as non-standard values, and sometimes omits reasoning entirely
     const normalised: ProposedBudget[] = (parsed as Record<string, unknown>[])
       .filter((b) =>
         typeof b.category === "string" && validCategories.has(b.category) &&
-        isFinite(Number(b.suggestedLimit)) && Number(b.suggestedLimit) >= 0 &&
-        typeof b.reasoning === "string"
+        isFinite(Number(b.suggestedLimit)) && Number(b.suggestedLimit) >= 0
+        // reasoning is optional — don't reject items that omit it
       )
       .map((b) => ({
         category: b.category as string,
         // Coerce to number in case Gemini returns a string like "530"
         suggestedLimit: Math.round(Number(b.suggestedLimit) / 10) * 10,
-        reasoning: b.reasoning as string,
+        reasoning: typeof b.reasoning === "string" ? b.reasoning : "",
         // Normalise source — "actual" / "histor" → "actual", everything else → "rule"
         source: String(b.source ?? "rule").toLowerCase().includes("actual") ||
                 String(b.source ?? "rule").toLowerCase().includes("histor")
@@ -197,6 +232,7 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
       }));
 
     if (normalised.length === 0) {
+      console.error("suggestBudgets: no valid categories in parsed array:", parsed);
       onEvent({ type: "error", message: "AI did not return valid budget categories. Please try again." });
       return;
     }
