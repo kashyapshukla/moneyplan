@@ -7,7 +7,8 @@ import { Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
-  "Entertainment", "Shopping", "Income", "Other",
+  "Entertainment", "Shopping", "Income",
+  "Investment", "Savings", "Other",
 ];
 
 type Transaction = {

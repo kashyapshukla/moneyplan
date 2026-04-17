@@ -1,6 +1,7 @@
 const VALID_CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
-  "Entertainment", "Shopping", "Income", "Other",
+  "Entertainment", "Shopping", "Income",
+  "Investment", "Savings", "Other",
 ] as const;
 
 type Category = (typeof VALID_CATEGORIES)[number];
@@ -17,18 +18,25 @@ export async function categorizeTransactions(
   if (transactions.length === 0) return [];
 
   const prompt = `You are a smart personal finance assistant. Categorize each bank transaction into exactly one of these categories:
-Food, Housing, Transport, Health, Entertainment, Shopping, Income, Other.
+Food, Housing, Transport, Health, Entertainment, Shopping, Income, Investment, Savings, Other.
 
 Rules:
-- Positive amounts = money coming IN → likely "Income" (salary, refunds, transfers in)
-- Negative amounts = money going OUT → expense category
-- Use merchant name, description keywords, and amount to decide
-- Common patterns: NETFLIX/SPOTIFY/DISNEY → Entertainment, UBER/LYFT/GAS → Transport, AMAZON/TARGET/WALMART → Shopping, WHOLE FOODS/MCDONALD/STARBUCKS → Food, RENT/MORTGAGE/ELECTRIC → Housing, CVS/WALGREENS/HOSPITAL → Health, PAYROLL/DIRECT DEP/ZELLE → Income
+- Positive amounts = money coming IN → "Income" (salary, payroll, direct deposit) OR "Investment" (dividends, stock sale proceeds)
+- Negative amounts = money going OUT → pick the best expense category
+- Investment: Robinhood, Fidelity, Vanguard, Schwab, TD Ameritrade, E*TRADE, Coinbase, stock/ETF purchases, crypto buys, brokerage transfers
+- Savings: transfers to savings account, high-yield savings (Marcus, Ally, SoFi), emergency fund transfers
+- Food: restaurants, groceries, Starbucks, McDonald's, Whole Foods, DoorDash, Uber Eats
+- Housing: rent, mortgage, electric, gas, water, internet, home insurance, HOA
+- Transport: Uber, Lyft, gas stations, parking, tolls, car insurance, public transit
+- Health: CVS, Walgreens, hospitals, doctor, dentist, gym, health insurance
+- Entertainment: Netflix, Spotify, Disney+, Apple TV, concerts, movies, games
+- Shopping: Amazon, Target, Walmart, clothing stores, online retail
+- Income: salary, payroll, DIRECT DEP, Zelle received, refunds
 
 Transactions:
 ${transactions.map((t, i) => `${i}. "${t.description}" (${t.amount > 0 ? "+" : ""}${t.amount})`).join("\n")}
 
-Reply ONLY with a JSON array like: [{"index": 0, "category": "Food"}, ...]
+Reply ONLY with a JSON array like: [{"index": 0, "category": "Investment"}, ...]
 No explanation, no markdown, just the JSON array.`;
 
   try {
@@ -80,7 +88,7 @@ export type BudgetSseEvent =
 // ── suggestBudgets ────────────────────────────────────────────────────────────
 
 const EXPENSE_CATEGORIES = [
-  "Food", "Housing", "Transport", "Health", "Entertainment", "Shopping", "Other",
+  "Food", "Housing", "Transport", "Health", "Entertainment", "Shopping", "Investment", "Savings", "Other",
 ] as const;
 
 export async function suggestBudgets({
@@ -113,8 +121,8 @@ Rules:
 - Total budget limits must not exceed 80% of income ($${Math.round(monthlyIncome * 0.8)}) so the user saves at least 20%
 - For categories WITH actual data and high confidence: stay within 10% of the actual average (round to nearest $10)
 - For categories WITHOUT data or low confidence: use 50/30/20 framework — needs (Food, Housing, Transport, Health) get 50% of income split proportionally, wants (Entertainment, Shopping) get 30% split proportionally
-- Housing is a "need". Food, Transport, Health are "needs". Entertainment, Shopping, Other are "wants"
-- Always include exactly these 7 expense categories: Food, Housing, Transport, Health, Entertainment, Shopping, Other
+- Housing is a "need". Food, Transport, Health are "needs". Entertainment, Shopping, Other are "wants". Investment and Savings are "savings goals"
+- Always include exactly these 9 expense categories: Food, Housing, Transport, Health, Entertainment, Shopping, Investment, Savings, Other
 - Round every limit to nearest $10
 
 IMPORTANT: Output the <proposal> JSON array FIRST, then explain your reasoning after it.

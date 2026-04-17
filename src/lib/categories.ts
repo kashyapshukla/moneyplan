@@ -2,7 +2,8 @@
 
 export type TransactionCategory =
   | "Food" | "Housing" | "Transport" | "Health"
-  | "Entertainment" | "Shopping" | "Income" | "Other";
+  | "Entertainment" | "Shopping" | "Income"
+  | "Investment" | "Savings" | "Other";
 
 export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   Food: "Food & Dining",
@@ -12,5 +13,7 @@ export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   Entertainment: "Entertainment",
   Shopping: "Shopping",
   Income: "Income",
+  Investment: "Investment",
+  Savings: "Savings",
   Other: "Other",
 };
