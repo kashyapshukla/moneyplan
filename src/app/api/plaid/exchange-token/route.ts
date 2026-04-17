@@ -70,7 +70,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ ok: true });
   } catch (err) {
-    console.error("Plaid exchange-token error:", err);
+    // Log only message/code — never log accessToken or raw Plaid error (may contain sensitive data)
+    const message = err instanceof Error ? err.message : "unknown error";
+    console.error("Plaid exchange-token error:", message);
     return new Response(JSON.stringify({ error: "Could not connect bank account" }), { status: 500 });
   }
 }
