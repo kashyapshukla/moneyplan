@@ -62,6 +62,10 @@ export const accounts = pgTable("accounts", {
   balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("USD"),
   lastUpdated: timestamp("last_updated", { mode: "date" }).defaultNow().notNull(),
+  // Plaid integration — null for manually-added accounts
+  plaidAccountId: text("plaid_account_id").unique(),
+  plaidAccessToken: text("plaid_access_token"), // AES-256 encrypted
+  plaidItemId: text("plaid_item_id"),
 });
 
 export const transactions = pgTable(
@@ -78,6 +82,7 @@ export const transactions = pgTable(
     category: categoryEnum("category").notNull().default("Other"),
     source: transactionSourceEnum("source").notNull().default("manual"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    plaidTransactionId: text("plaid_transaction_id").unique(), // null for non-Plaid transactions
   },
   (table) => ({
     userDateIdx: index("transactions_user_date_idx").on(table.userId, table.date),
