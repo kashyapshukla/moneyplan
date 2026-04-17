@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePlaidLink } from "react-plaid-link";
 import { Button } from "@/components/ui/button";
 import { Building2, Loader2 } from "lucide-react";
 
-export function PlaidConnectButton({ onSuccess }: { onSuccess: () => void }) {
+export function PlaidConnectButton({ onSuccess }: { onSuccess?: () => void }) {
+  const router = useRouter();
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [error, setError] = useState("");
@@ -32,14 +34,15 @@ export function PlaidConnectButton({ onSuccess }: { onSuccess: () => void }) {
           body: JSON.stringify({ publicToken }),
         });
         if (!res.ok) throw new Error();
-        onSuccess();
+        router.refresh();
+        onSuccess?.();
       } catch {
         setError("Could not connect bank. Please try again.");
       } finally {
         setExchanging(false);
       }
     },
-    [onSuccess]
+    [onSuccess, router]
   );
 
   const { open, ready } = usePlaidLink({
