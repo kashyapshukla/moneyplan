@@ -71,6 +71,7 @@ export function BudgetsList({
     router.refresh();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleSaved(saved: any) {
     setBudgets((prev) => {
       const exists = prev.find((b) => b.id === saved.id || b.category === saved.category);
@@ -148,7 +149,7 @@ export function BudgetsList({
         {budgets.length === 0 ? (
           <div className="text-center py-10 text-slate-400">
             <p className="text-sm">No budgets set for this month</p>
-            <p className="text-xs mt-1">Click "Add Budget" to set monthly spending limits</p>
+            <p className="text-xs mt-1">Click &quot;Add Budget&quot; to set monthly spending limits</p>
           </div>
         ) : (
           <div className="space-y-3">

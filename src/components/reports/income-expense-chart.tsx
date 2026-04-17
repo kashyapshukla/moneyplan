@@ -9,7 +9,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
 
 type DataPoint = {
@@ -28,6 +27,7 @@ function fmt(n: number) {
   }).format(n);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const isForecast = payload[0]?.payload?.forecast;
@@ -36,6 +36,7 @@ function CustomTooltip({ active, payload, label }: any) {
       <p className="font-semibold text-slate-700">
         {label} {isForecast && <span className="text-slate-400 font-normal">(forecast)</span>}
       </p>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full inline-block" style={{ background: p.fill || p.color }} />

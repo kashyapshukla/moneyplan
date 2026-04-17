@@ -60,9 +60,10 @@ export function SavingsTrend({ data }: { data: DataPoint[] }) {
           />
           <ReferenceLine y={0} stroke="#e2e8f0" strokeDasharray="4 4" />
           <Tooltip
-            formatter={(value: number, name: string, props: any) => [
-              fmt(value),
-              props.payload?.forecast ? "Projected Savings" : "Savings",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            formatter={(value: any, _name: any, props: any) => [
+              fmt(Number(value)),
+              props?.payload?.forecast ? "Projected Savings" : "Savings",
             ]}
             contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
           />
@@ -73,6 +74,7 @@ export function SavingsTrend({ data }: { data: DataPoint[] }) {
             strokeWidth={2}
             strokeDasharray="0"
             fill="url(#savingsGradient)"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             dot={(props: any) => {
               const isForecast = props.payload?.forecast;
               return (

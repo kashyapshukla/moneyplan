@@ -26,6 +26,7 @@ export function BudgetFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSaved: (budget: any) => void;
   initial?: Budget | null;
   month: number;

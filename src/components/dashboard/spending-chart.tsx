@@ -54,12 +54,12 @@ export function SpendingChart({ spendingByCategory }: { spendingByCategory: Reco
             outerRadius={85}
             paddingAngle={2}
           >
-            {data.map((entry, index) => (
+            {data.map((entry) => (
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number) => [fmt(value), "Spent"]}
+            formatter={(value) => [fmt(Number(value)), "Spent"]}
             contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
           />
           <Legend

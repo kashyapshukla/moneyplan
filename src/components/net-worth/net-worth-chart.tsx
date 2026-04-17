@@ -62,7 +62,7 @@ export function NetWorthChart({ snapshots }: { snapshots: Snapshot[] }) {
             tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
           />
           <Tooltip
-            formatter={(value: number) => [fmt(value), "Net Worth"]}
+            formatter={(value) => [fmt(Number(value)), "Net Worth"]}
             contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
           />
           <Area

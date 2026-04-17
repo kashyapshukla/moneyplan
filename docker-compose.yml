@@ -1,0 +1,15 @@
+services:
+  moneyplan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: moneyplan:local
+    container_name: moneyplan
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local        # your real secrets — never committed
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_URL=http://localhost:3000
+    restart: unless-stopped

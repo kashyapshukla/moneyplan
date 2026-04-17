@@ -22,6 +22,7 @@ export function AccountFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSaved: (account: any) => void;
   initial?: Account | null;
 }) {

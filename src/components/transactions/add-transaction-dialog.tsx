@@ -26,6 +26,7 @@ export function AddTransactionDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSaved: (tx: any) => void;
   initial?: Transaction | null;
 }) {

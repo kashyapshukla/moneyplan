@@ -1,4 +1,4 @@
-import { Configuration, PlaidApi, PlaidEnvironments, CountryCode, Products } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { accounts, transactions } from "@/lib/schema";

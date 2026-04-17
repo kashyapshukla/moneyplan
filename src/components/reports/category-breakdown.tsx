@@ -88,7 +88,7 @@ export function CategoryBreakdown({ reports }: { reports: MonthlyReport[] }) {
             width={80}
           />
           <Tooltip
-            formatter={(v: number) => [fmt(v), "Total"]}
+            formatter={(v) => [fmt(Number(v)), "Total"]}
             contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
           />
           <Bar dataKey="total" radius={[0, 4, 4, 0]}>

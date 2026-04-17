@@ -43,10 +43,12 @@ describe("authConfig", () => {
 
   it("calls NextAuth with config that has Google and credentials providers", () => {
     jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../auth");
     });
     expect(NextAuth).toHaveBeenCalled();
     const config = (NextAuth as jest.Mock).mock.calls[0][0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const providerIds = config.providers.map((p: any) => p.id ?? p.type ?? p.name);
     expect(providerIds).toContain("google");
     expect(providerIds.some((id: string) => id?.toLowerCase().includes("credential"))).toBe(true);
@@ -54,6 +56,7 @@ describe("authConfig", () => {
 
   it("sets sign-in page to /sign-in", () => {
     jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../auth");
     });
     const config = (NextAuth as jest.Mock).mock.calls[0][0];
@@ -62,6 +65,7 @@ describe("authConfig", () => {
 
   it("uses database session strategy", () => {
     jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../auth");
     });
     const config = (NextAuth as jest.Mock).mock.calls[0][0];

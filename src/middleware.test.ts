@@ -19,6 +19,7 @@ describe("middleware config", () => {
   });
 
   it("exports a middleware function", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require("./middleware");
     expect(typeof mod.middleware).toBe("function");
   });
