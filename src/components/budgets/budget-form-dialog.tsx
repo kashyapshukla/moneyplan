@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CATEGORY_LABELS } from "@/lib/transactions";
+import { CATEGORY_LABELS } from "@/lib/categories";
 
 const EXPENSE_CATEGORIES = Object.entries(CATEGORY_LABELS).filter(
   ([key]) => key !== "Income"

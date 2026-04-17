@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import type { ProposedBudget } from "@/lib/gemini";
-import { CATEGORY_LABELS } from "@/lib/transactions";
+import { CATEGORY_LABELS } from "@/lib/categories";
 
 type AgentState =
   | "idle"

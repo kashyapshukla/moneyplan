@@ -2,20 +2,9 @@ import { db } from "@/lib/db";
 import { transactions } from "@/lib/schema";
 import { and, eq, gte, lte, like, desc, SQL } from "drizzle-orm";
 
-export type TransactionCategory =
-  | "Food" | "Housing" | "Transport" | "Health"
-  | "Entertainment" | "Shopping" | "Income" | "Other";
-
-export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
-  Food: "Food & Dining",
-  Housing: "Housing",
-  Transport: "Transport",
-  Health: "Health",
-  Entertainment: "Entertainment",
-  Shopping: "Shopping",
-  Income: "Income",
-  Other: "Other",
-};
+// Re-export from the no-DB constants file so existing imports keep working
+export type { TransactionCategory } from "@/lib/categories";
+export { CATEGORY_LABELS } from "@/lib/categories";
 
 export type TransactionSource = "csv_upload" | "plaid" | "manual";
 

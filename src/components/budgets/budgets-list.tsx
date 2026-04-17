@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pencil, Trash2, Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BudgetFormDialog } from "./budget-form-dialog";
-import { CATEGORY_LABELS } from "@/lib/transactions";
+import { CATEGORY_LABELS } from "@/lib/categories";
 import { useRouter } from "next/navigation";
 
 type BudgetWithSpending = {
