@@ -108,20 +108,24 @@ Rules:
 - For categories WITH actual data and high confidence: stay within 10% of the actual average (round to nearest $10)
 - For categories WITHOUT data or low confidence: use 50/30/20 framework — needs (Food, Housing, Transport, Health) get 50% of income split proportionally, wants (Entertainment, Shopping) get 30% split proportionally
 - Housing is a "need". Food, Transport, Health are "needs". Entertainment, Shopping, Other are "wants"
-- Always include all 7 expense categories (Food, Housing, Transport, Health, Entertainment, Shopping, Other)
+- Always include exactly these 7 expense categories: Food, Housing, Transport, Health, Entertainment, Shopping, Other
 - Round every limit to nearest $10
 
-First, think through your reasoning for each category out loud (2-3 sentences each). Then output your final proposal inside <proposal> XML tags as a JSON array.
-
-Example output format:
-I'll start with Food. The user averaged $480/month over 3 months with high confidence data. I'll recommend $530 to give a small buffer...
+IMPORTANT: Output the <proposal> JSON array FIRST, then explain your reasoning after it.
 
 <proposal>
 [
   {"category":"Food","suggestedLimit":530,"reasoning":"Based on your $480 average spend, with a small buffer","source":"actual"},
-  ...
+  {"category":"Housing","suggestedLimit":1200,"reasoning":"No data — allocated 30% of needs budget","source":"rule"},
+  {"category":"Transport","suggestedLimit":200,"reasoning":"No data — allocated proportionally from needs","source":"rule"},
+  {"category":"Health","suggestedLimit":100,"reasoning":"No data — allocated proportionally from needs","source":"rule"},
+  {"category":"Entertainment","suggestedLimit":300,"reasoning":"No data — 50/30/20 wants allocation","source":"rule"},
+  {"category":"Shopping","suggestedLimit":300,"reasoning":"No data — 50/30/20 wants allocation","source":"rule"},
+  {"category":"Other","suggestedLimit":200,"reasoning":"Remaining wants budget","source":"rule"}
 ]
-</proposal>`;
+</proposal>
+
+Then briefly explain your reasoning for each category (1-2 sentences each).`;
 
   try {
     const res = await fetch(geminiUrl(), {
@@ -131,7 +135,7 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 8192,
         },
       }),
     });
@@ -152,46 +156,43 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
     }
 
     // ── Extract JSON from the response ───────────────────────────────────────
-    // Gemini is inconsistent — it might use <proposal> tags, ```json blocks,
-    // or just output a bare JSON array. Try all three strategies in order.
+    // Prompt asks Gemini to output <proposal> FIRST so it's always captured
+    // even if the response gets truncated. Fallbacks handle other formats.
 
     let rawJson: string | null = null;
-    let thinkingText = fullText;
+    let thinkingText = "";
 
-    // Strategy 1: <proposal>...</proposal> tags
+    // Strategy 1: <proposal>...</proposal> tags (expected — proposal comes first now)
     const proposalTagMatch = fullText.match(/<proposal>([\s\S]*?)<\/proposal>/i);
     if (proposalTagMatch) {
       rawJson = proposalTagMatch[1].trim();
-      thinkingText = fullText.slice(0, fullText.indexOf("<proposal>")).trim();
+      // Reasoning text comes AFTER the proposal block
+      const afterProposal = fullText.slice(
+        fullText.toLowerCase().indexOf("</proposal>") + "</proposal>".length
+      ).trim();
+      thinkingText = afterProposal || fullText.slice(0, fullText.toLowerCase().indexOf("<proposal>")).trim();
     }
 
     // Strategy 2: ```json ... ``` or ``` ... ``` code block
     if (!rawJson) {
-      const codeBlockMatch = fullText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      const codeBlockMatch = fullText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/i);
       if (codeBlockMatch) {
         rawJson = codeBlockMatch[1].trim();
-        thinkingText = fullText.slice(0, fullText.indexOf("```")).trim();
+        thinkingText = fullText.replace(codeBlockMatch[0], "").trim();
       }
     }
 
     // Strategy 3: find the first [ ... ] JSON array anywhere in the text
     if (!rawJson) {
-      const arrayMatch = fullText.match(/(\[[\s\S]*\])/);
+      const arrayMatch = fullText.match(/(\[[\s\S]*?\])/);
       if (arrayMatch) {
         rawJson = arrayMatch[1].trim();
-        thinkingText = fullText.slice(0, fullText.indexOf(arrayMatch[1])).trim();
+        thinkingText = fullText.replace(arrayMatch[1], "").trim();
       }
     }
 
-    // Stream thinking text word by word (simulate streaming since Gemini non-streaming)
-    const words = thinkingText.split(/\s+/).filter(Boolean);
-    for (let i = 0; i < words.length; i += 5) {
-      onEvent({ type: "thinking", text: words.slice(i, i + 5).join(" ") + " " });
-      await new Promise((r) => setTimeout(r, 30));
-    }
-
     if (!rawJson) {
-      console.error("suggestBudgets: no JSON found in response:", fullText.slice(0, 300));
+      console.error("suggestBudgets: no JSON found in response:", fullText.slice(0, 500));
       onEvent({ type: "error", message: "AI did not return a budget proposal. Please try again." });
       return;
     }
@@ -238,6 +239,16 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
       console.error("suggestBudgets: no valid categories in parsed array:", parsed);
       onEvent({ type: "error", message: "AI did not return valid budget categories. Please try again." });
       return;
+    }
+
+    // Stream the reasoning text AFTER we've confirmed the proposal is valid
+    // (proposal comes first in response so JSON is never cut off by token limit)
+    if (thinkingText) {
+      const words = thinkingText.split(/\s+/).filter(Boolean);
+      for (let i = 0; i < words.length; i += 5) {
+        onEvent({ type: "thinking", text: words.slice(i, i + 5).join(" ") + " " });
+        await new Promise((r) => setTimeout(r, 20));
+      }
     }
 
     onEvent({ type: "proposal", budgets: normalised });
