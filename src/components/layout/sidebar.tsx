@@ -9,6 +9,7 @@ import {
   Target,
   MessageSquare,
   BarChart3,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,10 @@ const navItems = [
   { href: "/budgets", label: "Budgets", icon: Target },
   { href: "/ai-chat", label: "AI Chat", icon: MessageSquare },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+];
+
+const bottomItems = [
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -46,6 +51,23 @@ export function Sidebar() {
           </Link>
         ))}
       </nav>
+      <div className="space-y-1 border-t pt-3">
+        {bottomItems.map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname === href
+                ? "bg-slate-100 text-slate-900"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        ))}
+      </div>
     </aside>
   );
 }
