@@ -10,6 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnvConfig(__dirname);
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  serverExternalPackages: ["plaid"],
+};
 
 export default nextConfig;

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
@@ -37,6 +38,59 @@ export function AddTransactionDialog({
     amount: initial?.amount ?? "",
     category: initial?.category ?? "Other",
   });
+
+  // AI suggestion state
+  const [aiSuggesting, setAiSuggesting] = useState(false);
+  const [aiSuggested, setAiSuggested] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset form when dialog opens with new initial value
+  useEffect(() => {
+    setForm({
+      date: initial?.date
+        ? new Date(initial.date).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      description: initial?.description ?? "",
+      amount: initial?.amount ?? "",
+      category: initial?.category ?? "Other",
+    });
+    setAiSuggested(false);
+  }, [open, initial?.id]);
+
+  // Debounced AI category suggestion
+  useEffect(() => {
+    // Skip for edits (initial already has a category)
+    if (initial?.id) return;
+    if (form.description.length < 3) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setAiSuggesting(true);
+      try {
+        const res = await fetch("/api/ai/suggest-category", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description: form.description, amount: form.amount }),
+        });
+        if (!res.ok) return;
+        const { category } = await res.json();
+        if (category && CATEGORIES.includes(category)) {
+          setForm((f) => ({ ...f, category }));
+          setAiSuggested(true);
+        }
+      } catch {
+        // silent — user can pick manually
+      } finally {
+        setAiSuggesting(false);
+      }
+    }, 700);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.description]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,7 +132,10 @@ export function AddTransactionDialog({
               type="text"
               required
               value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              onChange={(e) => {
+                setAiSuggested(false);
+                setForm((f) => ({ ...f, description: e.target.value }));
+              }}
               placeholder="e.g. Starbucks coffee"
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
             />
@@ -96,10 +153,27 @@ export function AddTransactionDialog({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Category</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-slate-700">Category</label>
+              {aiSuggesting && (
+                <span className="flex items-center gap-1 text-xs text-violet-500">
+                  <Sparkles className="h-3 w-3 animate-pulse" />
+                  Suggesting…
+                </span>
+              )}
+              {aiSuggested && !aiSuggesting && (
+                <span className="flex items-center gap-1 text-xs text-violet-500">
+                  <Sparkles className="h-3 w-3" />
+                  AI suggested
+                </span>
+              )}
+            </div>
             <select
               value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              onChange={(e) => {
+                setAiSuggested(false);
+                setForm((f) => ({ ...f, category: e.target.value }));
+              }}
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
             >
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
