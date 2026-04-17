@@ -16,11 +16,17 @@ export async function categorizeTransactions(
 ): Promise<Category[]> {
   if (transactions.length === 0) return [];
 
-  const prompt = `Categorize each transaction into exactly one of these categories:
+  const prompt = `You are a smart personal finance assistant. Categorize each bank transaction into exactly one of these categories:
 Food, Housing, Transport, Health, Entertainment, Shopping, Income, Other.
 
+Rules:
+- Positive amounts = money coming IN → likely "Income" (salary, refunds, transfers in)
+- Negative amounts = money going OUT → expense category
+- Use merchant name, description keywords, and amount to decide
+- Common patterns: NETFLIX/SPOTIFY/DISNEY → Entertainment, UBER/LYFT/GAS → Transport, AMAZON/TARGET/WALMART → Shopping, WHOLE FOODS/MCDONALD/STARBUCKS → Food, RENT/MORTGAGE/ELECTRIC → Housing, CVS/WALGREENS/HOSPITAL → Health, PAYROLL/DIRECT DEP/ZELLE → Income
+
 Transactions:
-${transactions.map((t, i) => `${i}. "${t.description}" amount: ${t.amount}`).join("\n")}
+${transactions.map((t, i) => `${i}. "${t.description}" (${t.amount > 0 ? "+" : ""}${t.amount})`).join("\n")}
 
 Reply ONLY with a JSON array like: [{"index": 0, "category": "Food"}, ...]
 No explanation, no markdown, just the JSON array.`;
