@@ -7,7 +7,7 @@ type Category = (typeof VALID_CATEGORIES)[number];
 
 // Google AI Studio endpoint — works with GEMINI_API_KEY from aistudio.google.com
 // (Vertex AI endpoint requires OAuth2 service accounts, not API keys)
-function geminiUrl(model = "gemini-2.0-flash") {
+function geminiUrl(model = "gemini-2.5-flash-lite") {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 }
 
