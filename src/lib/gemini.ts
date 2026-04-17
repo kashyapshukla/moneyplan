@@ -5,8 +5,11 @@ const VALID_CATEGORIES = [
 
 type Category = (typeof VALID_CATEGORIES)[number];
 
-const VERTEX_ENDPOINT =
-  "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash-lite:generateContent";
+// Google AI Studio endpoint — works with GEMINI_API_KEY from aistudio.google.com
+// (Vertex AI endpoint requires OAuth2 service accounts, not API keys)
+function geminiUrl(model = "gemini-2.0-flash") {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+}
 
 export async function categorizeTransactions(
   transactions: { description: string; amount: number }[]
@@ -23,7 +26,7 @@ Reply ONLY with a JSON array like: [{"index": 0, "category": "Food"}, ...]
 No explanation, no markdown, just the JSON array.`;
 
   try {
-    const res = await fetch(`${VERTEX_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`, {
+    const res = await fetch(geminiUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -121,7 +124,7 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
 </proposal>`;
 
   try {
-    const res = await fetch(`${VERTEX_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`, {
+    const res = await fetch(geminiUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
