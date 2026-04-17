@@ -11,6 +11,10 @@ jest.mock("drizzle-orm/neon-http", () => ({
   })),
 }));
 
+jest.mock("@/lib/gemini", () => ({
+  categorizeTransactions: jest.fn(async (txs: unknown[]) => txs.map(() => "Other")),
+}));
+
 import {
   encryptToken,
   decryptToken,
@@ -59,12 +63,12 @@ describe("mapPlaidCategory", () => {
     expect(mapPlaidCategory(["Transfer", "Payroll"])).toBe("Income");
   });
 
-  it("falls back to Other for unknown", () => {
-    expect(mapPlaidCategory(["Service", "Financial"])).toBe("Other");
+  it("returns null for unmapped categories (triggers Gemini fallback)", () => {
+    expect(mapPlaidCategory(["Service", "Financial"])).toBeNull();
   });
 
-  it("handles null category", () => {
-    expect(mapPlaidCategory(null)).toBe("Other");
+  it("returns null for null input (triggers Gemini fallback)", () => {
+    expect(mapPlaidCategory(null)).toBeNull();
   });
 });
 
