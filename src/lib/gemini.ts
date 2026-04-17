@@ -168,7 +168,6 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
     }
 
     const rawJson = proposalMatch[1].trim();
-    console.log("[suggestBudgets] rawJson from Gemini:", rawJson);
     const parsed: unknown = JSON.parse(rawJson);
 
     if (!Array.isArray(parsed)) {
@@ -177,34 +176,25 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
     }
 
     const validCategories = new Set(EXPENSE_CATEGORIES as readonly string[]);
-    console.log("[suggestBudgets] raw items from Gemini:", JSON.stringify(parsed, null, 2));
 
-    // Normalise items — Gemini sometimes returns suggestedLimit as a string
-    // and source as non-standard values like "income_based" or "rule-based"
+    // Normalise items — Gemini returns suggestedLimit as string or number,
+    // and source as non-standard values like "framework", "income_based", "rule-based"
     const normalised: ProposedBudget[] = (parsed as Record<string, unknown>[])
-      .filter((b) => {
-        const catOk = typeof b.category === "string" && validCategories.has(b.category);
-        const limitOk = isFinite(Number(b.suggestedLimit)) && Number(b.suggestedLimit) >= 0;
-        const reasoningOk = typeof b.reasoning === "string";
-        if (!catOk || !limitOk || !reasoningOk) {
-          console.log("[suggestBudgets] dropping item (failed validation):", JSON.stringify(b),
-            { catOk, limitOk, reasoningOk });
-        }
-        return catOk && limitOk && reasoningOk;
-      })
+      .filter((b) =>
+        typeof b.category === "string" && validCategories.has(b.category) &&
+        isFinite(Number(b.suggestedLimit)) && Number(b.suggestedLimit) >= 0 &&
+        typeof b.reasoning === "string"
+      )
       .map((b) => ({
         category: b.category as string,
         // Coerce to number in case Gemini returns a string like "530"
         suggestedLimit: Math.round(Number(b.suggestedLimit) / 10) * 10,
         reasoning: b.reasoning as string,
-        // Normalise source — accept anything containing "actual"/"history" as "actual",
-        // everything else becomes "rule"
+        // Normalise source — "actual" / "histor" → "actual", everything else → "rule"
         source: String(b.source ?? "rule").toLowerCase().includes("actual") ||
                 String(b.source ?? "rule").toLowerCase().includes("histor")
           ? "actual" : "rule",
       }));
-
-    console.log("[suggestBudgets] normalised length:", normalised.length);
 
     if (normalised.length === 0) {
       onEvent({ type: "error", message: "AI did not return valid budget categories. Please try again." });
