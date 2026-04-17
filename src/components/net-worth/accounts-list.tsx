@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccountFormDialog } from "./account-form-dialog";
-import { ACCOUNT_TYPE_LABELS, LIABILITY_TYPES, AccountType, calcNetWorth } from "@/lib/accounts";
+import { ACCOUNT_TYPE_LABELS, LIABILITY_TYPES, AccountType, calcNetWorth } from "@/lib/account-types";
 import { useRouter } from "next/navigation";
 
 type Account = {

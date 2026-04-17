@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ACCOUNT_TYPE_LABELS, AccountType } from "@/lib/accounts";
+import { ACCOUNT_TYPE_LABELS, AccountType } from "@/lib/account-types";
 
 const ACCOUNT_TYPES = Object.entries(ACCOUNT_TYPE_LABELS) as [AccountType, string][];
 
