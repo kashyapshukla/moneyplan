@@ -25,7 +25,7 @@ export function TransactionsActions() {
       const res = await fetch("/api/ai/recategorize-all", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setRecatResult(`✓ ${data.updated} transactions updated`);
+      setRecatResult(`✓ ${data.updated} unreviewed transactions categorized`);
       router.refresh();
     } catch {
       setRecatResult("Failed. Please try again.");
@@ -44,7 +44,7 @@ export function TransactionsActions() {
           className="gap-2"
           onClick={handleRecategorize}
           disabled={recatLoading}
-          title="Re-categorize all transactions using AI"
+          title="AI categorizes only unreviewed transactions — verified ones are never touched"
         >
           {recatLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />

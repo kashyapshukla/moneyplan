@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { categorizeTransactions } from "@/lib/gemini";
 import type { TransactionCategory } from "@/lib/categories";
 
@@ -14,11 +14,19 @@ export async function POST() {
 
   const userId = session.user.id;
 
-  // Fetch all transactions for this user
+  // Only fetch unreviewed, non-Transfer transactions.
+  // Verified (manually reviewed) transactions keep their user-assigned category.
+  // Transfer transactions are auto-detected by amount-pairing — AI shouldn't touch them.
   const allTxs = await db
     .select({ id: transactions.id, description: transactions.description, amount: transactions.amount })
     .from(transactions)
-    .where(eq(transactions.userId, userId));
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        ne(transactions.verified, "true"),
+        ne(transactions.category, "Transfer")
+      )
+    );
 
   if (allTxs.length === 0) {
     return NextResponse.json({ updated: 0, total: 0 });

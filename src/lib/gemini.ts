@@ -1,7 +1,7 @@
 const VALID_CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
   "Entertainment", "Shopping", "Income",
-  "Investment", "Savings", "Other",
+  "Investment", "Savings", "Transfer", "Other",
 ] as const;
 
 type Category = (typeof VALID_CATEGORIES)[number];
@@ -18,20 +18,26 @@ export async function categorizeTransactions(
   if (transactions.length === 0) return [];
 
   const prompt = `You are a smart personal finance assistant. Categorize each bank transaction into exactly one of these categories:
-Food, Housing, Transport, Health, Entertainment, Shopping, Income, Investment, Savings, Other.
+Food, Housing, Transport, Health, Entertainment, Shopping, Income, Investment, Savings, Transfer, Other.
 
 Rules:
-- Positive amounts = money coming IN → "Income" (salary, payroll, direct deposit) OR "Investment" (dividends, stock sale proceeds)
-- Negative amounts = money going OUT → pick the best expense category
-- Investment: Robinhood, Fidelity, Vanguard, Schwab, TD Ameritrade, E*TRADE, Coinbase, stock/ETF purchases, crypto buys, brokerage transfers
-- Savings: transfers to savings account, high-yield savings (Marcus, Ally, SoFi), emergency fund transfers
+- Transfer (HIGHEST PRIORITY — check this FIRST):
+    • Credit card payments: "PAYMENT THANK YOU", "AUTOPAY", "ONLINE PMT", "CREDIT CARD PAYMENT", "CARD PAYMENT", "MINIMUM PAYMENT", any description containing "payment" on a credit account
+    • Bank-to-bank moves: "TRANSFER TO", "TRANSFER FROM", "ACCOUNT TRANSFER", "WIRE TRANSFER", "ACH TRANSFER", "ZELLE TO", "VENMO CASHOUT", "PAYPAL TRANSFER"
+    • Internal moves: moving money between your own checking/savings/investment accounts
+    • Rule: if it looks like money moving between accounts you own, it is Transfer — NOT an expense or income
+- Positive amounts = money coming IN → "Income" or "Transfer" (if it's a payment received between own accounts)
+- Negative amounts = money going OUT → pick the best expense category, or Transfer if paying a credit card
+- Income: salary, payroll, DIRECT DEP, employer deposits, tax refunds, dividends, interest earned
+- Investment: Robinhood, Fidelity, Vanguard, Schwab, TD Ameritrade, E*TRADE, Coinbase, stock/ETF purchases, crypto buys
+- Savings: deposits to savings account, high-yield savings (Marcus, Ally, SoFi), emergency fund contributions
 - Food: restaurants, groceries, Starbucks, McDonald's, Whole Foods, DoorDash, Uber Eats
-- Housing: rent, mortgage, electric, gas, water, internet, home insurance, HOA
+- Housing: rent, utilities (electric, gas, water), internet, home insurance, HOA
 - Transport: Uber, Lyft, gas stations, parking, tolls, car insurance, public transit
 - Health: CVS, Walgreens, hospitals, doctor, dentist, gym, health insurance
 - Entertainment: Netflix, Spotify, Disney+, Apple TV, concerts, movies, games
 - Shopping: Amazon, Target, Walmart, clothing stores, online retail
-- Income: salary, payroll, DIRECT DEP, Zelle received, refunds
+- Other: anything that does not clearly fit the above
 
 Transactions:
 ${transactions.map((t, i) => `${i}. "${t.description}" (${t.amount > 0 ? "+" : ""}${t.amount})`).join("\n")}
@@ -88,7 +94,7 @@ export type BudgetSseEvent =
 // ── suggestBudgets ────────────────────────────────────────────────────────────
 
 const EXPENSE_CATEGORIES = [
-  "Food", "Housing", "Transport", "Health", "Entertainment", "Shopping", "Investment", "Savings", "Other",
+  "Food", "Housing", "Transport", "Entertainment", "Shopping", "Investment", "Savings", "Other",
 ] as const;
 
 export async function suggestBudgets({
@@ -120,9 +126,9 @@ ${categoryLines}
 Rules:
 - Total budget limits must not exceed 80% of income ($${Math.round(monthlyIncome * 0.8)}) so the user saves at least 20%
 - For categories WITH actual data and high confidence: stay within 10% of the actual average (round to nearest $10)
-- For categories WITHOUT data or low confidence: use 50/30/20 framework — needs (Food, Housing, Transport, Health) get 50% of income split proportionally, wants (Entertainment, Shopping) get 30% split proportionally
-- Housing is a "need". Food, Transport, Health are "needs". Entertainment, Shopping, Other are "wants". Investment and Savings are "savings goals"
-- Always include exactly these 9 expense categories: Food, Housing, Transport, Health, Entertainment, Shopping, Investment, Savings, Other
+- For categories WITHOUT data or low confidence: use 50/30/20 framework — needs (Food, Housing, Transport) get 50% of income split proportionally, wants (Entertainment, Shopping) get 30% split proportionally
+- Housing is a "need". Food and Transport are "needs". Entertainment, Shopping, Other are "wants". Investment and Savings are "savings goals" — recommend at least 10% of income combined.
+- Always include exactly these 8 expense categories: Food, Housing, Transport, Entertainment, Shopping, Investment, Savings, Other
 - Round every limit to nearest $10
 
 IMPORTANT: Output the <proposal> JSON array FIRST, then explain your reasoning after it.
@@ -132,10 +138,11 @@ IMPORTANT: Output the <proposal> JSON array FIRST, then explain your reasoning a
   {"category":"Food","suggestedLimit":530,"reasoning":"Based on your $480 average spend, with a small buffer","source":"actual"},
   {"category":"Housing","suggestedLimit":1200,"reasoning":"No data — allocated 30% of needs budget","source":"rule"},
   {"category":"Transport","suggestedLimit":200,"reasoning":"No data — allocated proportionally from needs","source":"rule"},
-  {"category":"Health","suggestedLimit":100,"reasoning":"No data — allocated proportionally from needs","source":"rule"},
   {"category":"Entertainment","suggestedLimit":300,"reasoning":"No data — 50/30/20 wants allocation","source":"rule"},
   {"category":"Shopping","suggestedLimit":300,"reasoning":"No data — 50/30/20 wants allocation","source":"rule"},
-  {"category":"Other","suggestedLimit":200,"reasoning":"Remaining wants budget","source":"rule"}
+  {"category":"Investment","suggestedLimit":400,"reasoning":"Recommended 10% of income for long-term growth","source":"rule"},
+  {"category":"Savings","suggestedLimit":200,"reasoning":"Emergency fund and short-term savings goal","source":"rule"},
+  {"category":"Other","suggestedLimit":150,"reasoning":"Remaining budget for miscellaneous expenses","source":"rule"}
 ]
 </proposal>
 
