@@ -1,28 +1,29 @@
 import { auth } from "@/lib/auth";
-import { NextRequest } from "next/server";
-import { getSpendingAverages } from "@/lib/budgets";
+import { getSpendingAverages, getMonthlyIncomeFromTransactions } from "@/lib/budgets";
 import { suggestBudgets, BudgetSseEvent } from "@/lib/gemini";
 
 // Force dynamic rendering so Next.js never caches this SSE route
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const session = await auth();
   if (!session?.user?.id) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  let body: { monthlyIncome?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 });
+  // Auto-detect monthly income from transaction history
+  const incomeResult = await getMonthlyIncomeFromTransactions(session.user.id);
+  if (!incomeResult || incomeResult.monthlyIncome <= 0) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "No income transactions found. Add some income transactions first so the AI can calculate your budget.",
+      }),
+      { status: 422 }
+    );
   }
-  const monthlyIncome = Number(body.monthlyIncome);
 
-  if (!monthlyIncome || monthlyIncome <= 0) {
-    return new Response(JSON.stringify({ error: "monthlyIncome is required" }), { status: 400 });
-  }
+  const { monthlyIncome, monthsUsed } = incomeResult;
 
   // Get spending history
   const { byCategory, confidence } = await getSpendingAverages(session.user.id);
@@ -40,6 +41,12 @@ export async function POST(req: NextRequest) {
   async function sendEvent(event: BudgetSseEvent) {
     await writer.write(`data: ${JSON.stringify(event)}\n\n`);
   }
+
+  // Emit detected income as the first thinking line
+  sendEvent({
+    type: "thinking",
+    text: `Detected monthly income: $${monthlyIncome.toLocaleString()} (avg over ${monthsUsed} month${monthsUsed !== 1 ? "s" : ""})\n`,
+  });
 
   // Run agent in background, stream events
   suggestBudgets({

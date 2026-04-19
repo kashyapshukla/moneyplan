@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { NextRequest } from "next/server";
-import { plaidClient, encryptToken, mapPlaidAccountType, syncPlaidItem } from "@/lib/plaid";
+import { plaidClient, encryptToken, mapPlaidAccountType } from "@/lib/plaid";
 import { db } from "@/lib/db";
 import { accounts } from "@/lib/schema";
 import { eq } from "drizzle-orm";
@@ -65,8 +65,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Run initial transaction sync (last 90 days)
-    await syncPlaidItem(session.user.id, accessToken);
+    // Do NOT sync transactions immediately — Plaid's transactions product
+    // takes 10-60 seconds to initialize on first connect (PRODUCT_NOT_READY).
+    // The user can click "Sync Now" once the account appears.
 
     return Response.json({ ok: true });
   } catch (err) {

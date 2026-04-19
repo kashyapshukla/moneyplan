@@ -16,8 +16,14 @@ type AgentState =
   | "error";
 
 const CATEGORY_ICONS: Record<string, string> = {
-  Food: "🍔", Housing: "🏠", Transport: "🚗",
-  Health: "🏥", Entertainment: "🎭", Shopping: "🛍", Other: "📦",
+  Food: "🍔",
+  Housing: "🏠",
+  Transport: "🚗",
+  Entertainment: "🎭",
+  Shopping: "🛍",
+  Investment: "📈",
+  Savings: "🏦",
+  Other: "📦",
 };
 
 function fmt(n: number) {
@@ -25,12 +31,10 @@ function fmt(n: number) {
 }
 
 export function BudgetAgentPanel({
-  monthlyIncome,
   month,
   year,
   onDone,
 }: {
-  monthlyIncome: number;
   month: number;
   year: number;
   onDone?: () => void;
@@ -66,10 +70,22 @@ export function BudgetAgentPanel({
       const res = await fetch("/api/ai/suggest-budgets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthlyIncome, month, year }),
+        body: JSON.stringify({ month, year }),
       });
 
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
+        // Non-2xx — try to read error JSON (e.g. 422 no income found)
+        try {
+          const err = await res.json();
+          setErrorMsg(err.error ?? "Could not reach the AI service.");
+        } catch {
+          setErrorMsg("Could not reach the AI service.");
+        }
+        setAgentState("error");
+        return;
+      }
+
+      if (!res.body) {
         setErrorMsg("Could not reach the AI service.");
         setAgentState("error");
         return;
@@ -124,8 +140,8 @@ export function BudgetAgentPanel({
   async function applyBudgets() {
     setAgentState("applying");
     let applied = 0;
-
     let failed = 0;
+
     for (const proposal of proposals) {
       const limit = editedLimits[proposal.category] ?? proposal.suggestedLimit;
       try {
@@ -161,7 +177,6 @@ export function BudgetAgentPanel({
     (sum, p) => sum + (editedLimits[p.category] ?? p.suggestedLimit),
     0
   );
-  const projectedSavings = monthlyIncome - totalBudgeted;
 
   return (
     <div className="rounded-xl border bg-white overflow-hidden">
@@ -172,7 +187,7 @@ export function BudgetAgentPanel({
           <p className="text-sm font-semibold text-slate-800">Budget Setup Agent</p>
           <p className="text-xs text-slate-400">
             {agentState === "loading" && "Connecting to AI..."}
-            {agentState === "thinking" && "Analysing your spending..."}
+            {agentState === "thinking" && "Analysing your spending & income..."}
             {agentState === "proposal_ready" && "Ready — review and apply"}
             {agentState === "applying" && `Applying budgets... ${applyProgress}%`}
             {agentState === "done" && "All budgets applied ✓"}
@@ -256,11 +271,7 @@ export function BudgetAgentPanel({
       {agentState === "proposal_ready" && proposals.length > 0 && (
         <div className="px-5 py-4 border-t bg-slate-50 flex items-center justify-between gap-4">
           <div className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-900">{fmt(totalBudgeted)}</span> budgeted
-            &nbsp;·&nbsp;
-            <span className={`font-semibold ${projectedSavings >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-              {fmt(Math.abs(projectedSavings))} {projectedSavings >= 0 ? "saved" : "over"}
-            </span>
+            <span className="font-semibold text-slate-900">{fmt(totalBudgeted)}</span> total budgeted
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={startAgent}>

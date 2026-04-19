@@ -7,9 +7,12 @@ import {
   ArrowLeftRight,
   TrendingUp,
   Target,
+  Flag,
   MessageSquare,
   BarChart3,
   Settings,
+  Repeat,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +23,9 @@ const navItems = [
   { href: "/budgets", label: "Budgets", icon: Target },
   { href: "/ai-chat", label: "AI Chat", icon: MessageSquare },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/recurring", label: "Recurring", icon: Repeat },
+  { href: "/calendar", label: "Bill Calendar", icon: Calendar },
+  { href: "/goals", label: "Goals", icon: Flag },
 ];
 
 const bottomItems = [

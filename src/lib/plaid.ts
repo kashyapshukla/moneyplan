@@ -1,4 +1,4 @@
-import { Configuration, PlaidApi, PlaidEnvironments, CountryCode, Products } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { accounts, transactions } from "@/lib/schema";
@@ -6,6 +6,7 @@ import { eq, and } from "drizzle-orm";
 import type { AccountType } from "@/lib/account-types";
 import type { TransactionCategory } from "@/lib/categories";
 import { categorizeTransactions } from "@/lib/gemini";
+import { detectAndMarkTransfers } from "@/lib/transfer-detection";
 
 // ── Plaid SDK client ─────────────────────────────────────────────────────────
 
@@ -87,9 +88,15 @@ export function mapPlaidCategory(plaidCategory: string[] | null): TransactionCat
   if (combined.includes("utilit") || combined.includes("rent") || combined.includes("mortgage") ||
       combined.includes("home improvement") || combined.includes("internet") || combined.includes("electric")) return "Housing";
 
-  // Income — Plaid: "Transfer", "Deposit", "Payroll"
+  // Income — Plaid: "Deposit", "Payroll"
   if (combined.includes("payroll") || combined.includes("income") || combined.includes("salary") ||
       combined.includes("deposit") || combined.includes("interest earned") || combined.includes("dividend")) return "Income";
+
+  // Transfers — credit card payments and internal account moves.
+  // Checked before falling through to Gemini so these are never mis-categorized.
+  // (Amount-pairing in detectAndMarkTransfers catches the rest after sync.)
+  if (primary === "transfer" || combined.includes("account transfer") || combined.includes("wire transfer")) return "Transfer";
+  if (primary === "payment" && (detailed.includes("credit card") || detailed.includes("mortgage and rent"))) return "Transfer";
 
   // Return null to signal "needs Gemini categorization"
   return null;
@@ -200,4 +207,7 @@ export async function syncPlaidItem(userId: string, accessToken: string): Promis
       })
       .onConflictDoNothing({ target: transactions.plaidTransactionId });
   }
+
+  // Detect transfer pairs (same amount in+out within 5 days) and mark them
+  await detectAndMarkTransfers(userId);
 }

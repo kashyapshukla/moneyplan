@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/schema";
 import { and, eq, gte, lte, like, desc, SQL } from "drizzle-orm";
+import type { TransactionCategory } from "@/lib/categories";
 
 // Re-export from the no-DB constants file so existing imports keep working
 export type { TransactionCategory } from "@/lib/categories";

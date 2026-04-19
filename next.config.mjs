@@ -11,7 +11,10 @@ loadEnvConfig(__dirname);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["plaid"],
+  output: "standalone",
+  experimental: {
+    serverComponentsExternalPackages: ["plaid"],
+  },
 };
 
 export default nextConfig;

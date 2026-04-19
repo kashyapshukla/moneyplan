@@ -36,6 +36,8 @@ export function PlaidConnectButton({ onSuccess }: { onSuccess?: () => void }) {
         if (!res.ok) throw new Error();
         router.refresh();
         onSuccess?.();
+        // Show a hint — Plaid needs ~30s before transactions are ready to sync
+        setError("✓ Bank connected! Wait 30 seconds then click Sync Now to import transactions.");
       } catch {
         setError("Could not connect bank. Please try again.");
       } finally {
@@ -67,7 +69,11 @@ export function PlaidConnectButton({ onSuccess }: { onSuccess?: () => void }) {
         )}
         {exchanging ? "Connecting..." : "Connect Bank"}
       </Button>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && (
+        <p className={`text-xs max-w-xs text-right ${error.startsWith("✓") ? "text-green-600" : "text-red-500"}`}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

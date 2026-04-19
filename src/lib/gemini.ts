@@ -1,29 +1,52 @@
 const VALID_CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
-  "Entertainment", "Shopping", "Income", "Other",
+  "Entertainment", "Shopping", "Income",
+  "Investment", "Savings", "Transfer", "Other",
 ] as const;
 
 type Category = (typeof VALID_CATEGORIES)[number];
 
-const VERTEX_ENDPOINT =
-  "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash-lite:generateContent";
+// Google AI Studio endpoint — works with GEMINI_API_KEY from aistudio.google.com
+// (Vertex AI endpoint requires OAuth2 service accounts, not API keys)
+function geminiUrl(model = "gemini-2.5-flash-lite") {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+}
 
 export async function categorizeTransactions(
   transactions: { description: string; amount: number }[]
 ): Promise<Category[]> {
   if (transactions.length === 0) return [];
 
-  const prompt = `Categorize each transaction into exactly one of these categories:
-Food, Housing, Transport, Health, Entertainment, Shopping, Income, Other.
+  const prompt = `You are a smart personal finance assistant. Categorize each bank transaction into exactly one of these categories:
+Food, Housing, Transport, Health, Entertainment, Shopping, Income, Investment, Savings, Transfer, Other.
+
+Rules:
+- Transfer (HIGHEST PRIORITY — check this FIRST):
+    • Credit card payments: "PAYMENT THANK YOU", "AUTOPAY", "ONLINE PMT", "CREDIT CARD PAYMENT", "CARD PAYMENT", "MINIMUM PAYMENT", any description containing "payment" on a credit account
+    • Bank-to-bank moves: "TRANSFER TO", "TRANSFER FROM", "ACCOUNT TRANSFER", "WIRE TRANSFER", "ACH TRANSFER", "ZELLE TO", "VENMO CASHOUT", "PAYPAL TRANSFER"
+    • Internal moves: moving money between your own checking/savings/investment accounts
+    • Rule: if it looks like money moving between accounts you own, it is Transfer — NOT an expense or income
+- Positive amounts = money coming IN → "Income" or "Transfer" (if it's a payment received between own accounts)
+- Negative amounts = money going OUT → pick the best expense category, or Transfer if paying a credit card
+- Income: salary, payroll, DIRECT DEP, employer deposits, tax refunds, dividends, interest earned
+- Investment: Robinhood, Fidelity, Vanguard, Schwab, TD Ameritrade, E*TRADE, Coinbase, stock/ETF purchases, crypto buys
+- Savings: deposits to savings account, high-yield savings (Marcus, Ally, SoFi), emergency fund contributions
+- Food: restaurants, groceries, Starbucks, McDonald's, Whole Foods, DoorDash, Uber Eats
+- Housing: rent, utilities (electric, gas, water), internet, home insurance, HOA
+- Transport: Uber, Lyft, gas stations, parking, tolls, car insurance, public transit
+- Health: CVS, Walgreens, hospitals, doctor, dentist, gym, health insurance
+- Entertainment: Netflix, Spotify, Disney+, Apple TV, concerts, movies, games
+- Shopping: Amazon, Target, Walmart, clothing stores, online retail
+- Other: anything that does not clearly fit the above
 
 Transactions:
-${transactions.map((t, i) => `${i}. "${t.description}" amount: ${t.amount}`).join("\n")}
+${transactions.map((t, i) => `${i}. "${t.description}" (${t.amount > 0 ? "+" : ""}${t.amount})`).join("\n")}
 
-Reply ONLY with a JSON array like: [{"index": 0, "category": "Food"}, ...]
+Reply ONLY with a JSON array like: [{"index": 0, "category": "Investment"}, ...]
 No explanation, no markdown, just the JSON array.`;
 
   try {
-    const res = await fetch(`${VERTEX_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`, {
+    const res = await fetch(geminiUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -71,7 +94,7 @@ export type BudgetSseEvent =
 // ── suggestBudgets ────────────────────────────────────────────────────────────
 
 const EXPENSE_CATEGORIES = [
-  "Food", "Housing", "Transport", "Health", "Entertainment", "Shopping", "Other",
+  "Food", "Housing", "Transport", "Entertainment", "Shopping", "Investment", "Savings", "Other",
 ] as const;
 
 export async function suggestBudgets({
@@ -103,32 +126,37 @@ ${categoryLines}
 Rules:
 - Total budget limits must not exceed 80% of income ($${Math.round(monthlyIncome * 0.8)}) so the user saves at least 20%
 - For categories WITH actual data and high confidence: stay within 10% of the actual average (round to nearest $10)
-- For categories WITHOUT data or low confidence: use 50/30/20 framework — needs (Food, Housing, Transport, Health) get 50% of income split proportionally, wants (Entertainment, Shopping) get 30% split proportionally
-- Housing is a "need". Food, Transport, Health are "needs". Entertainment, Shopping, Other are "wants"
-- Always include all 7 expense categories (Food, Housing, Transport, Health, Entertainment, Shopping, Other)
+- For categories WITHOUT data or low confidence: use 50/30/20 framework — needs (Food, Housing, Transport) get 50% of income split proportionally, wants (Entertainment, Shopping) get 30% split proportionally
+- Housing is a "need". Food and Transport are "needs". Entertainment, Shopping, Other are "wants". Investment and Savings are "savings goals" — recommend at least 10% of income combined.
+- Always include exactly these 8 expense categories: Food, Housing, Transport, Entertainment, Shopping, Investment, Savings, Other
 - Round every limit to nearest $10
 
-First, think through your reasoning for each category out loud (2-3 sentences each). Then output your final proposal inside <proposal> XML tags as a JSON array.
-
-Example output format:
-I'll start with Food. The user averaged $480/month over 3 months with high confidence data. I'll recommend $530 to give a small buffer...
+IMPORTANT: Output the <proposal> JSON array FIRST, then explain your reasoning after it.
 
 <proposal>
 [
   {"category":"Food","suggestedLimit":530,"reasoning":"Based on your $480 average spend, with a small buffer","source":"actual"},
-  ...
+  {"category":"Housing","suggestedLimit":1200,"reasoning":"No data — allocated 30% of needs budget","source":"rule"},
+  {"category":"Transport","suggestedLimit":200,"reasoning":"No data — allocated proportionally from needs","source":"rule"},
+  {"category":"Entertainment","suggestedLimit":300,"reasoning":"No data — 50/30/20 wants allocation","source":"rule"},
+  {"category":"Shopping","suggestedLimit":300,"reasoning":"No data — 50/30/20 wants allocation","source":"rule"},
+  {"category":"Investment","suggestedLimit":400,"reasoning":"Recommended 10% of income for long-term growth","source":"rule"},
+  {"category":"Savings","suggestedLimit":200,"reasoning":"Emergency fund and short-term savings goal","source":"rule"},
+  {"category":"Other","suggestedLimit":150,"reasoning":"Remaining budget for miscellaneous expenses","source":"rule"}
 ]
-</proposal>`;
+</proposal>
+
+Then briefly explain your reasoning for each category (1-2 sentences each).`;
 
   try {
-    const res = await fetch(`${VERTEX_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`, {
+    const res = await fetch(geminiUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 8192,
         },
       }),
     });
@@ -148,27 +176,59 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
       return;
     }
 
-    // Split thinking from proposal
-    const proposalMatch = fullText.match(/<proposal>([\s\S]*?)<\/proposal>/);
-    const thinkingText = proposalMatch
-      ? fullText.slice(0, fullText.indexOf("<proposal>")).trim()
-      : fullText;
+    // ── Extract JSON from the response ───────────────────────────────────────
+    // Prompt asks Gemini to output <proposal> FIRST so it's always captured
+    // even if the response gets truncated. Fallbacks handle other formats.
 
-    // Stream thinking text word by word (simulate streaming since Gemini non-streaming)
-    const words = thinkingText.split(/\s+/).filter(Boolean);
-    for (let i = 0; i < words.length; i += 5) {
-      onEvent({ type: "thinking", text: words.slice(i, i + 5).join(" ") + " " });
-      // tiny yield to allow SSE flush
-      await new Promise((r) => setTimeout(r, 30));
+    let rawJson: string | null = null;
+    let thinkingText = "";
+
+    // Strategy 1: <proposal>...</proposal> tags (expected — proposal comes first now)
+    const proposalTagMatch = fullText.match(/<proposal>([\s\S]*?)<\/proposal>/i);
+    if (proposalTagMatch) {
+      rawJson = proposalTagMatch[1].trim();
+      // Reasoning text comes AFTER the proposal block
+      const afterProposal = fullText.slice(
+        fullText.toLowerCase().indexOf("</proposal>") + "</proposal>".length
+      ).trim();
+      thinkingText = afterProposal || fullText.slice(0, fullText.toLowerCase().indexOf("<proposal>")).trim();
     }
 
-    if (!proposalMatch) {
+    // Strategy 2: ```json ... ``` or ``` ... ``` code block
+    if (!rawJson) {
+      const codeBlockMatch = fullText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/i);
+      if (codeBlockMatch) {
+        rawJson = codeBlockMatch[1].trim();
+        thinkingText = fullText.replace(codeBlockMatch[0], "").trim();
+      }
+    }
+
+    // Strategy 3: find the first [ ... ] JSON array anywhere in the text
+    if (!rawJson) {
+      const arrayMatch = fullText.match(/(\[[\s\S]*?\])/);
+      if (arrayMatch) {
+        rawJson = arrayMatch[1].trim();
+        thinkingText = fullText.replace(arrayMatch[1], "").trim();
+      }
+    }
+
+    if (!rawJson) {
+      console.error("suggestBudgets: no JSON found in response:", fullText.slice(0, 500));
       onEvent({ type: "error", message: "AI did not return a budget proposal. Please try again." });
       return;
     }
 
-    const rawJson = proposalMatch[1].trim();
-    const parsed: unknown = JSON.parse(rawJson);
+    // Strip any residual markdown (Gemini sometimes nests ```json inside <proposal>)
+    const cleanJson = rawJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(cleanJson);
+    } catch {
+      console.error("suggestBudgets: JSON.parse failed on:", cleanJson.slice(0, 200));
+      onEvent({ type: "error", message: "AI returned malformed JSON. Please try again." });
+      return;
+    }
 
     if (!Array.isArray(parsed)) {
       onEvent({ type: "error", message: "AI returned an unexpected format. Please try again." });
@@ -178,18 +238,18 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
     const validCategories = new Set(EXPENSE_CATEGORIES as readonly string[]);
 
     // Normalise items — Gemini returns suggestedLimit as string or number,
-    // and source as non-standard values like "framework", "income_based", "rule-based"
+    // source as non-standard values, and sometimes omits reasoning entirely
     const normalised: ProposedBudget[] = (parsed as Record<string, unknown>[])
       .filter((b) =>
         typeof b.category === "string" && validCategories.has(b.category) &&
-        isFinite(Number(b.suggestedLimit)) && Number(b.suggestedLimit) >= 0 &&
-        typeof b.reasoning === "string"
+        isFinite(Number(b.suggestedLimit)) && Number(b.suggestedLimit) >= 0
+        // reasoning is optional — don't reject items that omit it
       )
       .map((b) => ({
         category: b.category as string,
         // Coerce to number in case Gemini returns a string like "530"
         suggestedLimit: Math.round(Number(b.suggestedLimit) / 10) * 10,
-        reasoning: b.reasoning as string,
+        reasoning: typeof b.reasoning === "string" ? b.reasoning : "",
         // Normalise source — "actual" / "histor" → "actual", everything else → "rule"
         source: String(b.source ?? "rule").toLowerCase().includes("actual") ||
                 String(b.source ?? "rule").toLowerCase().includes("histor")
@@ -197,8 +257,19 @@ I'll start with Food. The user averaged $480/month over 3 months with high confi
       }));
 
     if (normalised.length === 0) {
+      console.error("suggestBudgets: no valid categories in parsed array:", parsed);
       onEvent({ type: "error", message: "AI did not return valid budget categories. Please try again." });
       return;
+    }
+
+    // Stream the reasoning text AFTER we've confirmed the proposal is valid
+    // (proposal comes first in response so JSON is never cut off by token limit)
+    if (thinkingText) {
+      const words = thinkingText.split(/\s+/).filter(Boolean);
+      for (let i = 0; i < words.length; i += 5) {
+        onEvent({ type: "thinking", text: words.slice(i, i + 5).join(" ") + " " });
+        await new Promise((r) => setTimeout(r, 20));
+      }
     }
 
     onEvent({ type: "proposal", budgets: normalised });

@@ -4,10 +4,15 @@ import { getMonthlyReports, getForecast } from "@/lib/reports";
 import { IncomeExpenseChart } from "@/components/reports/income-expense-chart";
 import { SavingsTrend } from "@/components/reports/savings-trend";
 import { CategoryBreakdown } from "@/components/reports/category-breakdown";
+import { CashFlowSection } from "@/components/reports/cash-flow-section";
+import { IncomeSourceSelector } from "@/components/settings/income-source-selector";
+import { ExpenseBreakdownCard } from "@/components/reports/expense-breakdown-card";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
+
+const EXCLUDE_FROM_CONSUMPTION = new Set(["Investment", "Savings", "Transfer", "Income"]);
 
 export default async function ReportsPage() {
   const session = await auth();
@@ -19,25 +24,46 @@ export default async function ReportsPage() {
   // Combine actuals + forecast for charts
   const incomeExpenseData = [
     ...reports.map((r) => ({
-      label: r.label,
-      income: r.income,
-      expenses: r.expenses,
-      savings: r.savings,
+      label:    r.label,
+      income:   r.income,
+      expenses: r.expenses,  // pure consumption
+      saved:    r.saved,
+      invested: r.invested,
+      savings:  r.savings,
     })),
     ...forecast,
   ];
 
   // Averages from last 3 months
   const last3 = reports.slice(-3);
-  const avgIncome = last3.reduce((s, r) => s + r.income, 0) / (last3.length || 1);
-  const avgExpenses = last3.reduce((s, r) => s + r.expenses, 0) / (last3.length || 1);
+  const avgIncome    = last3.reduce((s, r) => s + r.income,   0) / (last3.length || 1);
+  const avgExpenses  = last3.reduce((s, r) => s + r.expenses, 0) / (last3.length || 1); // pure consumption
+  const avgSaved     = last3.reduce((s, r) => s + r.saved,    0) / (last3.length || 1);
+  const avgInvested  = last3.reduce((s, r) => s + r.invested, 0) / (last3.length || 1);
   const avgSavingsRate =
-    avgIncome > 0 ? ((avgIncome - avgExpenses) / avgIncome) * 100 : 0;
+    avgIncome > 0 ? ((avgSaved + avgInvested) / avgIncome) * 100 : 0;
 
   const projectedAnnualSavings =
     forecast.length > 0
       ? forecast.reduce((s, f) => s + f.savings, 0) / forecast.length * 12
       : 0;
+
+  // Category breakdown for the expense card (avg over last3, consumption only)
+  const catTotals: Record<string, number> = {};
+  for (const r of last3) {
+    for (const [cat, amt] of Object.entries(r.byCategory)) {
+      if (EXCLUDE_FROM_CONSUMPTION.has(cat)) continue;
+      catTotals[cat] = (catTotals[cat] ?? 0) + amt;
+    }
+  }
+  const expenseCategories = Object.entries(catTotals)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, total]) => ({
+      name,
+      avg: total / (last3.length || 1),
+      pct: avgExpenses > 0 ? (total / (last3.length || 1) / avgExpenses) * 100 : 0,
+    }));
 
   return (
     <div className="space-y-6">
@@ -50,36 +76,42 @@ export default async function ReportsPage() {
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[
-          {
-            label: "Avg Monthly Income",
-            value: fmt(avgIncome),
-            color: "text-emerald-600",
-          },
-          {
-            label: "Avg Monthly Expenses",
-            value: fmt(avgExpenses),
-            color: "text-slate-900",
-          },
-          {
-            label: "Avg Savings Rate",
-            value: `${avgSavingsRate.toFixed(1)}%`,
-            color: avgSavingsRate >= 20 ? "text-emerald-600" : avgSavingsRate >= 10 ? "text-blue-600" : "text-amber-600",
-          },
-          {
-            label: "Projected Annual Savings",
-            value: fmt(projectedAnnualSavings),
-            color: projectedAnnualSavings >= 0 ? "text-indigo-600" : "text-red-600",
-          },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border bg-white p-5">
-            <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">
-              {stat.label}
-            </p>
-            <p className={`text-xl font-bold tabular-nums ${stat.color}`}>{stat.value}</p>
-          </div>
-        ))}
+        {/* Income */}
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Avg Monthly Income</p>
+          <p className="text-xl font-bold tabular-nums text-emerald-600">{fmt(avgIncome)}</p>
+        </div>
+
+        {/* Expenses — clickable breakdown */}
+        <ExpenseBreakdownCard
+          avgExpenses={avgExpenses}
+          categories={expenseCategories}
+          monthCount={last3.length}
+        />
+
+        {/* Saved / Invested */}
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Avg Saved / Invested</p>
+          <p className={`text-xl font-bold tabular-nums ${avgSavingsRate >= 20 ? "text-teal-600" : avgSavingsRate >= 10 ? "text-indigo-600" : "text-amber-600"}`}>
+            {fmt(avgSaved)} / {fmt(avgInvested)}
+          </p>
+          <p className="text-xs text-slate-400 mt-0.5">{avgSavingsRate.toFixed(1)}% of income</p>
+        </div>
+
+        {/* Projected annual savings */}
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Projected Annual Savings</p>
+          <p className={`text-xl font-bold tabular-nums ${projectedAnnualSavings >= 0 ? "text-indigo-600" : "text-red-600"}`}>
+            {fmt(projectedAnnualSavings)}
+          </p>
+        </div>
       </div>
+
+      {/* Income Source Selector */}
+      <IncomeSourceSelector />
+
+      {/* Cash Flow Sankey */}
+      <CashFlowSection />
 
       {/* Charts */}
       <IncomeExpenseChart data={incomeExpenseData} />

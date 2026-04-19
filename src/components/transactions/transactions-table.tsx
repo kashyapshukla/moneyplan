@@ -22,6 +22,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   Entertainment: "bg-purple-100 text-purple-700",
   Shopping: "bg-pink-100 text-pink-700",
   Income: "bg-emerald-100 text-emerald-700",
+  Investment: "bg-indigo-100 text-indigo-700",
+  Savings: "bg-teal-100 text-teal-700",
+  Transfer: "bg-sky-100 text-sky-700",
   Other: "bg-slate-100 text-slate-700",
 };
 

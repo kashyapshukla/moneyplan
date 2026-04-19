@@ -32,6 +32,9 @@ export const categoryEnum = pgEnum("category", [
   "Entertainment",
   "Shopping",
   "Income",
+  "Investment",
+  "Savings",
+  "Transfer",
   "Other",
 ]);
 
@@ -83,6 +86,7 @@ export const transactions = pgTable(
     source: transactionSourceEnum("source").notNull().default("manual"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     plaidTransactionId: text("plaid_transaction_id").unique(), // null for non-Plaid transactions
+    verified: text("verified").notNull().default("false"), // "true" | "false" — avoid bool migration issues
   },
   (table) => ({
     userDateIdx: index("transactions_user_date_idx").on(table.userId, table.date),
@@ -170,3 +174,46 @@ export const verificationTokens = pgTable(
     pk: primaryKey({ columns: [table.identifier, table.token] }),
   })
 );
+
+export const incomeSources = pgTable("income_sources", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+  description: text("description").notNull(),
+}, (t) => [uniqueIndex("income_sources_user_desc_idx").on(t.userId, t.description)]);
+
+export const recurringTransactions = pgTable("recurring_transactions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  description: text("description").notNull(),
+  displayName: text("display_name").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  category: categoryEnum("category").notNull().default("Other"),
+  frequency: text("frequency").notNull(),
+  dayOfMonth: integer("day_of_month"),
+  lastSeen: date("last_seen", { mode: "date" }).notNull(),
+  nextExpected: date("next_expected", { mode: "date" }),
+  isSubscription: text("is_subscription").notNull().default("false"),
+  isActive: text("is_active").notNull().default("true"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("recurring_user_desc_idx").on(t.userId, t.description)]);
+
+export const goalTypeEnum = pgEnum("goal_type", [
+  "savings",
+  "debt_payoff",
+  "emergency_fund",
+]);
+
+export const goals = pgTable("goals", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: goalTypeEnum("type").notNull(),
+  targetAmount: numeric("target_amount", { precision: 12, scale: 2 }),
+  currentAmount: numeric("current_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  monthlyContribution: numeric("monthly_contribution", { precision: 12, scale: 2 }),
+  interestRate: numeric("interest_rate", { precision: 5, scale: 2 }).default("0"),
+  targetDate: date("target_date", { mode: "date" }),
+  linkedAccountId: uuid("linked_account_id").references(() => accounts.id, { onDelete: "set null" }),
+  targetMonths: integer("target_months"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+}, (t) => [index("goals_user_id_idx").on(t.userId)]);

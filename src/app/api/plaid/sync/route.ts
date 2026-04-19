@@ -44,7 +44,15 @@ export async function POST(req: NextRequest) {
     await syncPlaidItem(session.user.id, accessToken);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error("Plaid sync error:", err);
+    // PRODUCT_NOT_READY: Plaid transactions take 10-60s to initialise after first connect
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("PRODUCT_NOT_READY") || msg.includes("not yet ready")) {
+      return new Response(
+        JSON.stringify({ error: "Transactions are still loading. Please wait 30 seconds and try again." }),
+        { status: 503 }
+      );
+    }
+    console.error("Plaid sync error:", msg);
     return new Response(JSON.stringify({ error: "Sync failed. Please try again." }), { status: 500 });
   }
 }

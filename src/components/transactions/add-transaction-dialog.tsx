@@ -7,7 +7,8 @@ import { Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   "Food", "Housing", "Transport", "Health",
-  "Entertainment", "Shopping", "Income", "Other",
+  "Entertainment", "Shopping", "Income",
+  "Investment", "Savings", "Transfer", "Other",
 ];
 
 type Transaction = {
@@ -26,6 +27,7 @@ export function AddTransactionDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSaved: (tx: any) => void;
   initial?: Transaction | null;
 }) {
@@ -55,6 +57,7 @@ export function AddTransactionDialog({
       category: initial?.category ?? "Other",
     });
     setAiSuggested(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
   // Debounced AI category suggestion
