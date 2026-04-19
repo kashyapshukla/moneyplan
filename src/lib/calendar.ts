@@ -21,26 +21,39 @@ function addDays(d: Date, n: number): Date {
   return r;
 }
 
+/** Advance a Date by one calendar month, clamped to last day of target month. */
+function addOneMonth(d: Date): Date {
+  const result = new Date(d);
+  const targetMonth = result.getMonth() + 1;
+  result.setMonth(targetMonth);
+  if (result.getMonth() !== targetMonth % 12) result.setDate(0);
+  return result;
+}
+
+function advanceByFrequency(d: Date, frequency: RecurringItem["frequency"]): Date {
+  if (frequency === "weekly") return addDays(d, 7);
+  if (frequency === "biweekly") return addDays(d, 14);
+  if (frequency === "monthly") return addOneMonth(d);
+  // annual
+  const r = new Date(d);
+  r.setFullYear(r.getFullYear() + 1);
+  return r;
+}
+
 function projectOccurrences(item: RecurringItem, from: Date, to: Date): Date[] {
   const dates: Date[] = [];
   if (!item.nextExpected) return dates;
 
-  // Start from nextExpected; if it's before `from`, advance until we're in range
+  // Start from nextExpected; fast-forward to first occurrence >= from
   let current = new Date(item.nextExpected);
-
-  // If nextExpected is before the range start, fast-forward to first occurrence >= from
   while (current < from) {
-    if (item.frequency === "weekly") current = addDays(current, 7);
-    else if (item.frequency === "monthly") current.setMonth(current.getMonth() + 1);
-    else current.setFullYear(current.getFullYear() + 1);
+    current = advanceByFrequency(current, item.frequency);
   }
 
   // Collect all occurrences within range
   while (current <= to) {
     dates.push(new Date(current));
-    if (item.frequency === "weekly") current = addDays(current, 7);
-    else if (item.frequency === "monthly") current.setMonth(current.getMonth() + 1);
-    else current.setFullYear(current.getFullYear() + 1);
+    current = advanceByFrequency(current, item.frequency);
   }
 
   return dates;

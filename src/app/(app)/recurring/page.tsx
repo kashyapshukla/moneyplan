@@ -12,11 +12,10 @@ export default async function RecurringPage() {
 
   const monthlyCommitted = items.reduce((s, i) => {
     const monthly =
-      i.frequency === "weekly"
-        ? (i.amount * 52) / 12
-        : i.frequency === "annual"
-        ? i.amount / 12
-        : i.amount;
+      i.frequency === "weekly" ? (i.amount * 52) / 12
+      : i.frequency === "biweekly" ? (i.amount * 26) / 12
+      : i.frequency === "annual" ? i.amount / 12
+      : i.amount;
     return s + monthly;
   }, 0);
 

@@ -7,7 +7,7 @@ type RecurringItem = {
   displayName: string;
   amount: number;
   category: string;
-  frequency: "weekly" | "monthly" | "annual";
+  frequency: "weekly" | "biweekly" | "monthly" | "annual";
   dayOfMonth: number | null;
   nextExpected: string | null;
   isSubscription: boolean;
@@ -15,6 +15,7 @@ type RecurringItem = {
 
 const FREQ_LABEL: Record<string, string> = {
   weekly: "Weekly",
+  biweekly: "Every 2 weeks",
   monthly: "Monthly",
   annual: "Annual",
 };
@@ -25,6 +26,7 @@ function fmt(n: number) {
 
 function toMonthly(amount: number, freq: string): number {
   if (freq === "weekly") return (amount * 52) / 12;
+  if (freq === "biweekly") return (amount * 26) / 12;
   if (freq === "annual") return amount / 12;
   return amount;
 }
