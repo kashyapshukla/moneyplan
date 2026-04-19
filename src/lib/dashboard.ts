@@ -14,8 +14,8 @@ export async function getDashboardData(userId: string) {
   // Total income and expenses this month
   const [monthlyAggs] = await db
     .select({
-      totalIncome: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount} > 0 THEN ${transactions.amount} ELSE 0 END), 0)`,
-      totalExpenses: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount} < 0 THEN ABS(${transactions.amount}) ELSE 0 END), 0)`,
+      totalIncome: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount} > 0 AND ${transactions.category}::text != 'Transfer' THEN ${transactions.amount} ELSE 0 END), 0)`,
+      totalExpenses: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount} < 0 AND ${transactions.category}::text != 'Transfer' THEN ABS(${transactions.amount}) ELSE 0 END), 0)`,
       txCount: sql<number>`COUNT(*)`,
     })
     .from(transactions)
