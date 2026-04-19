@@ -3,7 +3,7 @@
 export type TransactionCategory =
   | "Food" | "Housing" | "Transport" | "Health"
   | "Entertainment" | "Shopping" | "Income"
-  | "Investment" | "Savings" | "Other";
+  | "Investment" | "Savings" | "Transfer" | "Other";
 
 export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   Food: "Food & Dining",
@@ -15,5 +15,9 @@ export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   Income: "Income",
   Investment: "Investment",
   Savings: "Savings",
+  Transfer: "Transfer",
   Other: "Other",
 };
+
+// Categories that are never counted as expenses or income
+export const NON_EXPENSE_CATEGORIES: TransactionCategory[] = ["Income", "Transfer"];

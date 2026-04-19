@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MoneyPlan — Agentic Features Brainstorm</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .top-bar { background: #0f172a; color: white; padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
+  .top-bar .logo { font-weight: 700; font-size: 18px; }
+  .top-bar .badge { background: #6366f1; color: white; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+
+  .hero { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 56px 28px 48px; text-align: center; }
+  .hero h1 { font-size: 32px; font-weight: 800; margin-bottom: 12px; line-height: 1.2; }
+  .hero p { font-size: 16px; opacity: 0.85; max-width: 560px; margin: 0 auto; }
+
+  .section { padding: 48px 28px; max-width: 1100px; margin: 0 auto; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #6366f1; margin-bottom: 8px; }
+  .section-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .section-sub { font-size: 14px; color: #64748b; margin-bottom: 32px; }
+
+  /* Feature cards */
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 48px; }
+  .feature-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 24px; transition: box-shadow .2s; }
+  .feature-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+  .feature-card .icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
+  .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .feature-card p { font-size: 13px; color: #64748b; line-height: 1.6; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 3px 8px; border-radius: 99px; margin-top: 12px; }
+  .tag-agent { background: #ede9fe; color: #7c3aed; }
+  .tag-tool { background: #dcfce7; color: #16a34a; }
+  .tag-smart { background: #fef3c7; color: #d97706; }
+
+  /* Mockup A: Budget Setup Agent */
+  .mockup-box { background: white; border: 1.5px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.07); margin-bottom: 48px; }
+  .mockup-header { background: #f1f5f9; padding: 14px 20px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ef4444; } .dot-y { background: #f59e0b; } .dot-g { background: #10b981; }
+  .url-bar { flex: 1; background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 12px; font-size: 12px; color: #64748b; margin: 0 12px; }
+  .mockup-body { padding: 24px; }
+
+  /* Agent chat bubbles */
+  .chat-wrap { display: flex; flex-direction: column; gap: 16px; }
+  .bubble { max-width: 75%; padding: 14px 18px; border-radius: 18px; font-size: 13px; line-height: 1.6; }
+  .bubble-ai { background: #f1f5f9; color: #0f172a; border-bottom-left-radius: 4px; align-self: flex-start; }
+  .bubble-user { background: #6366f1; color: white; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .agent-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-bottom: 4px; }
+  .action-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: 4px; }
+  .action-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: #0f172a; }
+  .budget-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+  .budget-row:last-child { border-bottom: none; }
+  .budget-cat { color: #64748b; }
+  .budget-amount { font-weight: 700; color: #0f172a; }
+  .budget-bar { width: 80px; height: 5px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+  .budget-fill { height: 100%; background: #10b981; border-radius: 99px; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-primary { background: #6366f1; color: white; }
+  .btn-outline { background: white; color: #64748b; border: 1.5px solid #e2e8f0; }
+  .btn-green { background: #10b981; color: white; }
+
+  /* Tool call pill */
+  .tool-call { display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; color: #16a34a; margin-top: 8px; }
+  .tool-call::before { content: "⚡"; }
+
+  /* Alert mockup */
+  .alert-stack { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; border-radius: 12px; border: 1.5px solid; }
+  .alert-warn { background: #fffbeb; border-color: #fcd34d; }
+  .alert-danger { background: #fef2f2; border-color: #fca5a5; }
+  .alert-info { background: #eff6ff; border-color: #93c5fd; }
+  .alert-icon { font-size: 20px; flex-shrink: 0; }
+  .alert-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .alert-body { font-size: 12px; color: #64748b; }
+  .alert-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .alert-btn { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1.5px solid; cursor: pointer; }
+
+  /* Goals mockup */
+  .goal-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 12px; }
+  .goal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .goal-title { font-size: 14px; font-weight: 700; }
+  .goal-target { font-size: 12px; color: #64748b; }
+  .goal-progress { width: 100%; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+  .goal-fill { height: 100%; border-radius: 99px; }
+  .goal-meta { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; }
+
+  .divider { height: 1px; background: #f1f5f9; margin: 0 28px; }
+  .coming-soon { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <span class="logo">💰 MoneyPlan</span>
+  <span class="badge">Agentic Features — Brainstorm</span>
+</div>
+
+<div class="hero">
+  <h1>Making MoneyPlan Agentic</h1>
+  <p>Turning the AI from a passive chatbot into an active agent that takes actions, sets budgets, sends alerts, and guides your financial life.</p>
+</div>
+
+<!-- ── FEATURE OVERVIEW ── -->
+<div class="section">
+  <div class="section-label">Overview</div>
+  <div class="section-title">4 Agentic Feature Areas</div>
+  <div class="section-sub">Each one moves the AI from answering questions → taking real action in your account</div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="icon" style="background:#ede9fe">🤖</div>
+      <h3>1. Budget Setup Agent</h3>
+      <p>AI analyses your last 3 months of transactions, proposes a personalised budget for each category, and sets it for you in one click — no manual entry.</p>
+      <span class="tag tag-agent">Agent Action</span>
+    </div>
+    <div class="feature-card">
+      <div class="icon" style="background:#dcfce7">⚡</div>
+      <h3>2. Tool-Calling AI Chat</h3>
+      <p>The AI chat can now <em>do things</em> — add a transaction, update a budget, create an account, or pull a report — directly from the chat window.</p>
+      <span class="tag tag-tool">Tool Calling</span>
+    </div>
+    <div class="feature-card">
+      <div class="icon" style="background:#fef3c7">🔔</div>
+      <h3>3. Proactive Smart Alerts</h3>
+      <p>The agent monitors your spending in real-time and proactively nudges you — "You've spent 80% of your Food budget. Want me to review what's driving it?"</p>
+      <span class="tag tag-smart">Proactive</span>
+    </div>
+    <div class="feature-card">
+      <div class="icon" style="background:#fce7f3">🎯</div>
+      <h3>4. Financial Goals Agent</h3>
+      <p>Set a goal (e.g. "Save $10k for a house by Dec"). The agent creates a monthly savings plan, adjusts budgets to hit it, and tracks progress automatically.</p>
+      <span class="tag tag-agent">Agent Action</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── FEATURE 1: BUDGET SETUP AGENT ── -->
+<div class="section">
+  <div class="section-label">Feature 1 — Budget Setup Agent</div>
+  <div class="section-title">AI Sets Up Your Budget For You</div>
+  <div class="section-sub">User clicks "Let AI set up my budget" → agent analyses transactions → proposes plan → user approves → budgets are created</div>
+
+  <div class="mockup-box">
+    <div class="mockup-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">localhost:3000/budgets</div>
+    </div>
+    <div class="mockup-body">
+      <div class="chat-wrap">
+        <div style="align-self:flex-start">
+          <div class="agent-label">💰 MoneyPlan Agent</div>
+          <div class="bubble bubble-ai">
+            I've analysed your last 3 months of spending. Here's a personalised budget I'd recommend based on your actual habits:
+            <div class="action-card" style="margin-top:12px">
+              <h4>📊 Recommended Budget — May 2025</h4>
+              <div class="budget-row"><span class="budget-cat">🍔 Food</span><div class="budget-bar"><div class="budget-fill" style="width:70%"></div></div><span class="budget-amount">$520/mo</span></div>
+              <div class="budget-row"><span class="budget-cat">🚗 Transport</span><div class="budget-bar"><div class="budget-fill" style="width:45%"></div></div><span class="budget-amount">$180/mo</span></div>
+              <div class="budget-row"><span class="budget-cat">🏥 Health</span><div class="budget-bar"><div class="budget-fill" style="width:30%"></div></div><span class="budget-amount">$120/mo</span></div>
+              <div class="budget-row"><span class="budget-cat">🎭 Entertainment</span><div class="budget-bar"><div class="budget-fill" style="width:55%"></div></div><span class="budget-amount">$200/mo</span></div>
+              <div class="budget-row"><span class="budget-cat">🛍 Shopping</span><div class="budget-bar"><div class="budget-fill" style="width:60%"></div></div><span class="budget-amount">$350/mo</span></div>
+              <div class="btn-row">
+                <button class="btn btn-green">✓ Apply All Budgets</button>
+                <button class="btn btn-outline">✏️ Edit First</button>
+                <button class="btn btn-outline">✗ Cancel</button>
+              </div>
+            </div>
+            <div class="tool-call">upsertBudget × 5 ready to execute</div>
+          </div>
+        </div>
+        <div style="align-self:flex-end">
+          <div class="bubble bubble-user">Looks good! Apply them all.</div>
+        </div>
+        <div style="align-self:flex-start">
+          <div class="agent-label">💰 MoneyPlan Agent</div>
+          <div class="bubble bubble-ai">
+            ✅ Done! I've set 5 budgets for May. Your total monthly budget is <strong>$1,370</strong>. Based on your income of $4,200, that leaves <strong>$2,830</strong> for savings — a 67% savings rate. Want me to set a savings goal with that?
+            <div class="tool-call">upsertBudget × 5 — executed successfully</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── FEATURE 2: TOOL-CALLING CHAT ── -->
+<div class="section">
+  <div class="section-label">Feature 2 — Tool-Calling AI Chat</div>
+  <div class="section-title">Chat That Takes Real Actions</div>
+  <div class="section-sub">The AI gets access to tools — it can create, update, and delete data. You just ask in plain English.</div>
+
+  <div class="mockup-box">
+    <div class="mockup-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">localhost:3000/ai-chat</div>
+    </div>
+    <div class="mockup-body">
+      <div class="chat-wrap">
+        <div style="align-self:flex-end">
+          <div class="bubble bubble-user">Add a $45 Uber Eats transaction from yesterday</div>
+        </div>
+        <div style="align-self:flex-start">
+          <div class="agent-label">💰 MoneyPlan Agent</div>
+          <div class="bubble bubble-ai">
+            Added ✅<br><br>
+            <strong>Uber Eats</strong> · $45.00 · Food · Apr 15, 2025
+            <div class="tool-call">createTransaction — executed</div>
+          </div>
+        </div>
+        <div style="align-self:flex-end">
+          <div class="bubble bubble-user">Increase my Food budget by $50 this month</div>
+        </div>
+        <div style="align-self:flex-start">
+          <div class="agent-label">💰 MoneyPlan Agent</div>
+          <div class="bubble bubble-ai">
+            Done ✅ — Food budget updated from <strong>$520 → $570</strong> for May 2025.
+            <div class="tool-call">upsertBudget — executed</div>
+          </div>
+        </div>
+        <div style="align-self:flex-end">
+          <div class="bubble bubble-user">How much did I spend on transport this month?</div>
+        </div>
+        <div style="align-self:flex-start">
+          <div class="agent-label">💰 MoneyPlan Agent</div>
+          <div class="bubble bubble-ai">
+            You've spent <strong>$143 on Transport</strong> this month — 79% of your $180 budget. 3 transactions: Uber ($62), Gas ($51), Parking ($30).
+            <div class="tool-call">getSpendingByCategory — executed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <div class="section-label">Available Tools the AI Can Call</div>
+    <div class="feature-grid" style="margin-top:12px;margin-bottom:0">
+      <div class="feature-card" style="padding:16px">
+        <h3 style="font-size:13px;margin-bottom:4px">📝 createTransaction</h3>
+        <p style="font-size:12px">"Add $50 Starbucks yesterday"</p>
+      </div>
+      <div class="feature-card" style="padding:16px">
+        <h3 style="font-size:13px;margin-bottom:4px">💰 upsertBudget</h3>
+        <p style="font-size:12px">"Set my food budget to $600"</p>
+      </div>
+      <div class="feature-card" style="padding:16px">
+        <h3 style="font-size:13px;margin-bottom:4px">📊 getSpendingReport</h3>
+        <p style="font-size:12px">"Show me last month's breakdown"</p>
+      </div>
+      <div class="feature-card" style="padding:16px">
+        <h3 style="font-size:13px;margin-bottom:4px">🏦 createAccount</h3>
+        <p style="font-size:12px">"Add my new savings account with $5000"</p>
+      </div>
+      <div class="feature-card" style="padding:16px">
+        <h3 style="font-size:13px;margin-bottom:4px">🎯 createGoal</h3>
+        <p style="font-size:12px">"Help me save $10k by December"</p>
+      </div>
+      <div class="feature-card" style="padding:16px">
+        <h3 style="font-size:13px;margin-bottom:4px">📈 analyzeTrend</h3>
+        <p style="font-size:12px">"Am I spending more than last month?"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── FEATURE 3: SMART ALERTS ── -->
+<div class="section">
+  <div class="section-label">Feature 3 — Proactive Smart Alerts</div>
+  <div class="section-title">The Agent Watches, You Relax</div>
+  <div class="section-sub">Instead of you checking the dashboard, the agent flags issues and offers to fix them</div>
+
+  <div class="mockup-box">
+    <div class="mockup-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">localhost:3000/dashboard</div>
+    </div>
+    <div class="mockup-body">
+      <div class="section-label" style="margin-bottom:12px">🔔 Agent Alerts — Today</div>
+      <div class="alert-stack">
+        <div class="alert-item alert-danger">
+          <div class="alert-icon">🚨</div>
+          <div style="flex:1">
+            <div class="alert-title">Food budget exceeded by $43</div>
+            <div class="alert-body">You've spent $563 of your $520 Food budget. 3 Uber Eats orders this week are the main driver.</div>
+            <div class="alert-actions">
+              <button class="alert-btn" style="background:#fef2f2;border-color:#fca5a5;color:#dc2626">Increase budget by $50</button>
+              <button class="alert-btn" style="background:white;border-color:#e2e8f0;color:#64748b">Review transactions</button>
+            </div>
+          </div>
+        </div>
+        <div class="alert-item alert-warn">
+          <div class="alert-icon">⚠️</div>
+          <div style="flex:1">
+            <div class="alert-title">Entertainment at 82% — 10 days left</div>
+            <div class="alert-body">At this pace you'll exceed your $200 limit by Apr 25. You have $36 remaining.</div>
+            <div class="alert-actions">
+              <button class="alert-btn" style="background:#fffbeb;border-color:#fcd34d;color:#d97706">Ask AI for tips</button>
+              <button class="alert-btn" style="background:white;border-color:#e2e8f0;color:#64748b">Dismiss</button>
+            </div>
+          </div>
+        </div>
+        <div class="alert-item alert-info">
+          <div class="alert-icon">💡</div>
+          <div style="flex:1">
+            <div class="alert-title">Great month for savings!</div>
+            <div class="alert-body">You're on track to save $1,840 this month — your best month yet. Want me to put the extra toward your Emergency Fund goal?</div>
+            <div class="alert-actions">
+              <button class="alert-btn" style="background:#eff6ff;border-color:#93c5fd;color:#2563eb">Yes, update goal</button>
+              <button class="alert-btn" style="background:white;border-color:#e2e8f0;color:#64748b">Not now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── FEATURE 4: GOALS ── -->
+<div class="section">
+  <div class="section-label">Feature 4 — Financial Goals Agent</div>
+  <div class="section-title">Set a Goal, Let the Agent Plan It</div>
+  <div class="section-sub">Tell the AI what you want to achieve. It creates the plan, adjusts budgets, and tracks progress.</div>
+
+  <div class="mockup-box">
+    <div class="mockup-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">localhost:3000/goals</div>
+    </div>
+    <div class="mockup-body">
+      <div class="goal-card">
+        <div class="goal-header">
+          <div>
+            <div class="goal-title">🏠 House Down Payment</div>
+            <div class="goal-target">Target: $25,000 by Dec 2025</div>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:#10b981">On Track ✓</span>
+        </div>
+        <div class="goal-progress"><div class="goal-fill" style="width:38%;background:#10b981"></div></div>
+        <div class="goal-meta"><span>$9,500 saved</span><span>$15,500 to go — 8 months</span></div>
+        <div style="background:#f0fdf4;border-radius:10px;padding:12px;margin-top:14px;font-size:12px;color:#166534">
+          💡 <strong>Agent insight:</strong> Save $1,938/month to hit your goal. Your current pace is $2,100/month — you're ahead! At this rate you'll reach $25k by <strong>Nov 2025</strong>, a month early.
+        </div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-header">
+          <div>
+            <div class="goal-title">🚨 Emergency Fund</div>
+            <div class="goal-target">Target: $10,000 · No deadline</div>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:#f59e0b">Behind ⚠</span>
+        </div>
+        <div class="goal-progress"><div class="goal-fill" style="width:22%;background:#f59e0b"></div></div>
+        <div class="goal-meta"><span>$2,200 saved</span><span>$7,800 to go</span></div>
+        <div style="background:#fffbeb;border-radius:10px;padding:12px;margin-top:14px;font-size:12px;color:#92400e">
+          💡 <strong>Agent suggestion:</strong> Reduce Entertainment budget by $50/mo to accelerate this goal by 3 months. <button style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-left:6px">Apply change</button>
+        </div>
+      </div>
+      <div class="coming-soon">+ New Goal — Tell the AI what you're saving for</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUESTION ── -->
+<div style="background:#6366f1;padding:40px 28px;text-align:center;color:white">
+  <h2 style="font-size:22px;font-weight:800;margin-bottom:10px">Which feature excites you most?</h2>
+  <p style="opacity:.85;font-size:14px;max-width:500px;margin:0 auto">We'll build them in order of priority. Each one builds on the last — tool-calling unlocks the budget agent, which feeds the goals agent.</p>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px">
+    <button style="background:white;color:#6366f1;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">🤖 Budget Setup Agent</button>
+    <button style="background:rgba(255,255,255,.15);color:white;border:2px solid rgba(255,255,255,.4);border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">⚡ Tool-Calling Chat</button>
+    <button style="background:rgba(255,255,255,.15);color:white;border:2px solid rgba(255,255,255,.4);border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">🔔 Smart Alerts</button>
+    <button style="background:rgba(255,255,255,.15);color:white;border:2px solid rgba(255,255,255,.4);border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">🎯 Goals Agent</button>
+  </div>
+</div>
+
+</body>
+</html>

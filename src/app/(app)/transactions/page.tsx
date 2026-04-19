@@ -4,6 +4,7 @@ import { listTransactions, TransactionCategory } from "@/lib/transactions";
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
 import { TransactionsActions } from "@/components/transactions/transactions-actions";
+import { VerificationPanel } from "@/components/transactions/verification-panel";
 import { Suspense } from "react";
 
 export default async function TransactionsPage({
@@ -31,6 +32,8 @@ export default async function TransactionsPage({
         </div>
         <TransactionsActions />
       </div>
+
+      <VerificationPanel />
 
       <Suspense>
         <TransactionFilters />

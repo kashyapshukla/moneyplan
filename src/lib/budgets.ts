@@ -1,7 +1,8 @@
 import { db } from "./db";
 import { budgets, transactions } from "./schema";
-import { eq, and, gte, lte, lt, sql } from "drizzle-orm";
+import { eq, and, gte, lte, lt, sql, ne, inArray } from "drizzle-orm";
 import { TransactionCategory } from "./transactions";
+import { getIncomeSourceDescriptions } from "./reports";
 
 export type Budget = {
   id: string;
@@ -62,7 +63,8 @@ export async function getSpendingByCategory(
         eq(transactions.userId, userId),
         gte(transactions.date, firstDay),
         lte(transactions.date, lastDay),
-        sql`${transactions.amount} < 0`
+        sql`${transactions.amount} < 0`,
+        ne(transactions.category, "Transfer")
       )
     )
     .groupBy(transactions.category);
@@ -145,6 +147,60 @@ export async function upsertBudget(
   };
 }
 
+// ── Top transactions per category (for budget breakdown UI) ──────────────────
+
+export type CategoryTransaction = {
+  id: string;
+  description: string;
+  amount: string; // always negative (expense)
+  date: Date;
+};
+
+export async function getTopTransactionsByCategory(
+  userId: string,
+  month: number,
+  year: number,
+  limit = 5
+): Promise<Record<string, CategoryTransaction[]>> {
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+
+  const rows = await db
+    .select({
+      id: transactions.id,
+      description: transactions.description,
+      amount: transactions.amount,
+      category: transactions.category,
+      date: transactions.date,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.date, firstDay),
+        lte(transactions.date, lastDay),
+        sql`${transactions.amount}::numeric < 0`,
+        ne(transactions.category, "Transfer")
+      )
+    )
+    .orderBy(sql`ABS(${transactions.amount}::numeric) DESC`);
+
+  const byCategory: Record<string, CategoryTransaction[]> = {};
+  for (const row of rows) {
+    const cat = row.category;
+    if (!byCategory[cat]) byCategory[cat] = [];
+    if (byCategory[cat].length < limit) {
+      byCategory[cat].push({
+        id: row.id,
+        description: row.description,
+        amount: row.amount,
+        date: row.date instanceof Date ? row.date : new Date(row.date),
+      });
+    }
+  }
+  return byCategory;
+}
+
 export async function deleteBudget(userId: string, id: string): Promise<void> {
   await db
     .delete(budgets)
@@ -188,7 +244,8 @@ export async function getSpendingAverages(
         eq(transactions.userId, userId),
         gte(transactions.date, threeMonthsAgo),
         lt(transactions.date, currentMonthStart),
-        sql`${transactions.amount} < 0`
+        sql`${transactions.amount} < 0`,
+        ne(transactions.category, "Transfer")
       )
     );
   totalTransactions = Number(countRow?.count ?? 0);
@@ -216,6 +273,12 @@ export async function getMonthlyIncomeFromTransactions(
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  // Respect income source filter if configured
+  const sourcesFilter = await getIncomeSourceDescriptions(userId);
+  const sourceCondition = sourcesFilter.length > 0
+    ? inArray(transactions.description, sourcesFilter)
+    : undefined;
+
   const [row] = await db
     .select({
       total: sql<string>`COALESCE(SUM(${transactions.amount}::numeric), 0)`,
@@ -227,7 +290,8 @@ export async function getMonthlyIncomeFromTransactions(
         eq(transactions.userId, userId),
         gte(transactions.date, threeMonthsAgo),
         lt(transactions.date, currentMonthStart),
-        sql`${transactions.amount}::numeric > 0`   // positive = money IN
+        sql`${transactions.amount}::numeric > 0`,   // positive = money IN
+        ...(sourceCondition ? [sourceCondition] : [])
       )
     );
 
@@ -250,7 +314,8 @@ export async function getMonthlyIncomeFromTransactions(
             eq(transactions.userId, userId),
             gte(transactions.date, monthStart),
             lt(transactions.date, monthEnd),
-            sql`${transactions.amount}::numeric > 0`
+            sql`${transactions.amount}::numeric > 0`,
+            ...(sourceCondition ? [sourceCondition] : [])
           )
         );
       return Number(r?.s ?? 0);

@@ -6,7 +6,8 @@ import { Search } from "lucide-react";
 
 const CATEGORIES = [
   "All", "Food", "Housing", "Transport", "Health",
-  "Entertainment", "Shopping", "Income", "Other",
+  "Entertainment", "Shopping", "Income",
+  "Investment", "Savings", "Transfer", "Other",
 ];
 
 export function TransactionFilters() {

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_LABELS } from "@/lib/categories";
 
 const EXPENSE_CATEGORIES = Object.entries(CATEGORY_LABELS).filter(
-  ([key]) => key !== "Income"
+  ([key]) => key !== "Income" && key !== "Health" && key !== "Transfer"
 ) as [string, string][];
 
 type Budget = {
@@ -38,6 +38,14 @@ export function BudgetFormDialog({
     category: initial?.category ?? EXPENSE_CATEGORIES[0][0],
     monthlyLimit: initial?.monthlyLimit ? String(parseFloat(initial.monthlyLimit)) : "",
   });
+
+  // Sync form whenever the dialog opens for a different budget
+  useEffect(() => {
+    setForm({
+      category: initial?.category ?? EXPENSE_CATEGORIES[0][0],
+      monthlyLimit: initial?.monthlyLimit ? String(parseFloat(initial.monthlyLimit)) : "",
+    });
+  }, [initial]);
 
   const availableCategories = initial
     ? EXPENSE_CATEGORIES
