@@ -47,6 +47,9 @@ async function main() {
     )
   `;
   console.log("goals created");
+
+  await sql`CREATE INDEX IF NOT EXISTS goals_user_id_idx ON goals(user_id)`;
+  console.log("goals index created");
 }
 
 main().catch(console.error);

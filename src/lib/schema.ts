@@ -216,4 +216,4 @@ export const goals = pgTable("goals", {
   linkedAccountId: uuid("linked_account_id").references(() => accounts.id, { onDelete: "set null" }),
   targetMonths: integer("target_months"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-});
+}, (t) => [index("goals_user_id_idx").on(t.userId)]);
