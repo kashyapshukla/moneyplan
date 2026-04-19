@@ -7,6 +7,7 @@ import {
   ArrowLeftRight,
   TrendingUp,
   Target,
+  Flag,
   MessageSquare,
   BarChart3,
   Settings,
@@ -24,7 +25,7 @@ const navItems = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/recurring", label: "Recurring", icon: Repeat },
   { href: "/calendar", label: "Bill Calendar", icon: Calendar },
-  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/goals", label: "Goals", icon: Flag },
 ];
 
 const bottomItems = [
