@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +27,19 @@ export function GoalFormDialog({
   const [linkedAccountId, setLinkedAccountId] = useState("");
   const [targetMonths, setTargetMonths] = useState("6");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setType("savings");
+      setName("");
+      setTargetAmount("");
+      setMonthlyContribution("");
+      setInterestRate("");
+      setTargetDate("");
+      setLinkedAccountId("");
+      setTargetMonths("6");
+    }
+  }, [open]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -63,8 +63,9 @@ export async function listGoals(userId: string): Promise<Goal[]> {
         projectedDate = monthsLeft > 0 ? addMonths(monthsLeft) : new Date();
       }
     } else if (g.type === "debt_payoff" && targetAmt && contribution) {
-      const paid = targetAmt - currentAmt;
-      progressPct = Math.min(100, (paid / targetAmt) * 100);
+      const remainingBalance = currentAmt;
+      const paid = targetAmt - remainingBalance;
+      progressPct = Math.min(100, Math.max(0, (paid / targetAmt) * 100));
       projectedDate = addMonths(payoffMonths(currentAmt, contribution, rate));
     } else if (g.type === "emergency_fund" && targetAmt) {
       progressPct = Math.min(100, (currentAmt / targetAmt) * 100);
@@ -110,6 +111,9 @@ export async function createGoal(
       name: data.name,
       type: data.type,
       targetAmount: data.targetAmount != null ? String(data.targetAmount) : null,
+      currentAmount: data.type === "debt_payoff" && data.targetAmount
+        ? String(data.targetAmount)
+        : "0",
       monthlyContribution: data.monthlyContribution != null ? String(data.monthlyContribution) : null,
       interestRate: data.interestRate != null ? String(data.interestRate) : "0",
       targetDate: data.targetDate ? new Date(data.targetDate) : null,
