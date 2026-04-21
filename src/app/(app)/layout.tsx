@@ -4,7 +4,7 @@ import { OnboardingGuard } from "@/components/layout/onboarding-guard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
       <OnboardingGuard />
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
