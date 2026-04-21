@@ -4,6 +4,8 @@ import { decryptToken, syncPlaidItem } from "@/lib/plaid";
 import { db } from "@/lib/db";
 import { accounts } from "@/lib/schema";
 import { and, eq } from "drizzle-orm";
+import { listAccounts, saveNetWorthSnapshot } from "@/lib/accounts";
+import { calcNetWorth } from "@/lib/account-types";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -42,6 +44,12 @@ export async function POST(req: NextRequest) {
   try {
     const accessToken = decryptToken(account.plaidAccessToken);
     await syncPlaidItem(session.user.id, accessToken);
+
+    // Save net worth snapshot after balances are updated by Plaid sync
+    const all = await listAccounts(session.user.id);
+    const { totalAssets, totalLiabilities } = calcNetWorth(all);
+    await saveNetWorthSnapshot(session.user.id, totalAssets, totalLiabilities);
+
     return Response.json({ ok: true });
   } catch (err) {
     // PRODUCT_NOT_READY: Plaid transactions take 10-60s to initialise after first connect
