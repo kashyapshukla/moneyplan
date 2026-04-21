@@ -104,10 +104,11 @@ export default async function InvestmentActivityPage() {
 
         {data.every((d) => d.invested === 0) ? (
           <div className="h-[280px] flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">No investment activity found.</p>
-              <p className="text-slate-400 text-xs mt-1">
-                Make sure your investment accounts are synced on the Investments page.
+            <div className="text-center max-w-sm mx-auto">
+              <p className="text-slate-400 text-sm font-medium">No investment activity found yet.</p>
+              <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+                This chart shows transfers from your bank accounts to Robinhood, Vanguard, etc.
+                Make sure your checking/savings accounts are synced and have recent transactions.
               </p>
             </div>
           </div>

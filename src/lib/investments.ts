@@ -9,6 +9,14 @@ export type MonthlyInvestment = {
   invested: number;
 };
 
+// Common investment broker keywords to match transfers from bank accounts
+const BROKER_KEYWORDS = [
+  "robinhood", "vanguard", "fidelity", "schwab", "etrade", "e*trade",
+  "td ameritrade", "ameritrade", "merrill", "wealthfront", "betterment",
+  "acorns", "stash", "m1 finance", "sofi invest", "webull", "coinbase",
+  "invest", "brokerage",
+];
+
 export async function getMonthlyInvestmentActivity(
   userId: string,
   months = 12
@@ -18,7 +26,8 @@ export async function getMonthlyInvestmentActivity(
   since.setDate(1);
   since.setHours(0, 0, 0, 0);
 
-  const rows = await db
+  // Strategy 1: positive transactions IN investment accounts (standard Plaid sync)
+  const fromInvestmentAccounts = await db
     .select({
       year: sql<number>`EXTRACT(YEAR FROM ${transactions.date})::int`,
       month: sql<number>`EXTRACT(MONTH FROM ${transactions.date})::int`,
@@ -36,15 +45,48 @@ export async function getMonthlyInvestmentActivity(
     .groupBy(
       sql`EXTRACT(YEAR FROM ${transactions.date})`,
       sql`EXTRACT(MONTH FROM ${transactions.date})`
+    );
+
+  // Strategy 2: transfers OUT of bank/savings accounts going to investment brokers
+  // (Plaid typically does NOT return transactions for investment accounts via /transactions/get,
+  //  so we detect contributions by looking at outflows from bank accounts to known brokers)
+  const brokerPattern = BROKER_KEYWORDS.map((k) => `%${k}%`).join("|");
+  const fromBankTransfers = await db
+    .select({
+      year: sql<number>`EXTRACT(YEAR FROM ${transactions.date})::int`,
+      month: sql<number>`EXTRACT(MONTH FROM ${transactions.date})::int`,
+      invested: sql<string>`COALESCE(SUM(ABS(${transactions.amount}::numeric)), 0)`,
+    })
+    .from(transactions)
+    .innerJoin(accounts, eq(transactions.accountId, accounts.id))
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        sql`${accounts.type} IN ('checking', 'savings')`,
+        sql`${transactions.amount}::numeric < 0`,
+        sql`LOWER(${transactions.description}) SIMILAR TO ${`%(${brokerPattern})%`}`,
+        gte(transactions.date, since)
+      )
     )
-    .orderBy(
+    .groupBy(
       sql`EXTRACT(YEAR FROM ${transactions.date})`,
       sql`EXTRACT(MONTH FROM ${transactions.date})`
     );
 
+  // Merge both sources — sum by month (avoid double-counting by taking the larger source per month)
   const dataMap = new Map<string, number>();
-  for (const r of rows) {
-    dataMap.set(`${r.year}-${r.month}`, parseFloat(r.invested));
+
+  for (const r of fromInvestmentAccounts) {
+    const key = `${r.year}-${r.month}`;
+    dataMap.set(key, (dataMap.get(key) ?? 0) + parseFloat(r.invested));
+  }
+  for (const r of fromBankTransfers) {
+    const key = `${r.year}-${r.month}`;
+    // Only add bank transfers if investment account data is absent for this month
+    // (prevents double-counting if both sources report the same cash movement)
+    if (!dataMap.has(key)) {
+      dataMap.set(key, parseFloat(r.invested));
+    }
   }
 
   const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
