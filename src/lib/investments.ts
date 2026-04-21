@@ -61,16 +61,14 @@ export async function listHoldings(userId: string): Promise<Holding[]> {
     .sort((a, b) => b.marketValue - a.marketValue);
 }
 
-export async function getPortfolioSummary(userId: string): Promise<PortfolioSummary> {
-  const all = await listHoldings(userId);
-
-  const totalValue = all.reduce((s, h) => s + h.marketValue, 0);
-  const totalCostBasis = all.reduce((s, h) => s + (h.costBasis ?? h.marketValue), 0);
+export function computePortfolioSummary(holdings: Holding[]): PortfolioSummary {
+  const totalValue = holdings.reduce((s, h) => s + h.marketValue, 0);
+  const totalCostBasis = holdings.reduce((s, h) => s + (h.costBasis ?? h.marketValue), 0);
   const totalGainLoss = totalValue - totalCostBasis;
   const totalGainLossPct = totalCostBasis > 0 ? (totalGainLoss / totalCostBasis) * 100 : 0;
 
   const typeMap = new Map<string, number>();
-  for (const h of all) {
+  for (const h of holdings) {
     const t = h.securityType;
     typeMap.set(t, (typeMap.get(t) ?? 0) + h.marketValue);
   }
@@ -84,4 +82,10 @@ export async function getPortfolioSummary(userId: string): Promise<PortfolioSumm
     .sort((a, b) => b.value - a.value);
 
   return { totalValue, totalCostBasis, totalGainLoss, totalGainLossPct, byType };
+}
+
+// Keep the original async version for backward compatibility
+export async function getPortfolioSummary(userId: string): Promise<PortfolioSummary> {
+  const all = await listHoldings(userId);
+  return computePortfolioSummary(all);
 }

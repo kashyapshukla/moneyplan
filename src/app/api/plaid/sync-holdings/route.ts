@@ -36,7 +36,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
-  const accessToken = decryptToken(acct.plaidAccessToken);
-  const synced = await syncInvestmentHoldings(session.user.id, accessToken);
-  return NextResponse.json({ synced });
+  try {
+    const accessToken = decryptToken(acct.plaidAccessToken);
+    const synced = await syncInvestmentHoldings(session.user.id, accessToken);
+    return NextResponse.json({ synced });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("sync-holdings error:", msg);
+    return NextResponse.json({ error: "Sync failed. Please try again." }, { status: 500 });
+  }
 }

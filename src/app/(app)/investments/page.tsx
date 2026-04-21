@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { listHoldings, getPortfolioSummary } from "@/lib/investments";
+import { listHoldings, computePortfolioSummary } from "@/lib/investments";
 import { AllocationChart } from "@/components/investments/allocation-chart";
 import { HoldingsTable } from "@/components/investments/holdings-table";
 import { db } from "@/lib/db";
@@ -15,10 +15,8 @@ export default async function InvestmentsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
-  const [allHoldings, summary] = await Promise.all([
-    listHoldings(session.user.id),
-    getPortfolioSummary(session.user.id),
-  ]);
+  const allHoldings = await listHoldings(session.user.id);
+  const summary = computePortfolioSummary(allHoldings);
 
   const [investAcct] = await db
     .select({ plaidItemId: accounts.plaidItemId })
@@ -47,9 +45,7 @@ export default async function InvestmentsPage() {
               }`}
             >
               {summary.totalGainLoss >= 0 ? "+" : ""}
-              {fmt(summary.totalGainLoss)} (
-              {summary.totalGainLossPct >= 0 ? "+" : ""}
-              {summary.totalGainLossPct.toFixed(2)}%)
+              {fmt(summary.totalGainLoss)} ({summary.totalGainLossPct >= 0 ? "+" : ""}{summary.totalGainLossPct.toFixed(2)}%)
             </span>
           )}
         </p>
