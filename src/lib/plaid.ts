@@ -1,7 +1,7 @@
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { db } from "@/lib/db";
-import { accounts, transactions } from "@/lib/schema";
+import { accounts, transactions, holdings } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import type { AccountType } from "@/lib/account-types";
 import type { TransactionCategory } from "@/lib/categories";
@@ -210,4 +210,81 @@ export async function syncPlaidItem(userId: string, accessToken: string): Promis
 
   // Detect transfer pairs (same amount in+out within 5 days) and mark them
   await detectAndMarkTransfers(userId);
+}
+
+export async function syncInvestmentHoldings(
+  userId: string,
+  accessToken: string
+): Promise<number> {
+  let response;
+  try {
+    response = await plaidClient.investmentsHoldingsGet({
+      access_token: accessToken,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("PRODUCT_NOT_READY") || msg.includes("INVALID_PRODUCT") || msg.includes("PRODUCTS_NOT_SUPPORTED")) {
+      return 0;
+    }
+    throw err;
+  }
+
+  const { holdings: plaidHoldings, securities } = response.data;
+
+  const securityMap = new Map(
+    securities.map((s) => [s.security_id, s])
+  );
+
+  let synced = 0;
+
+  for (const h of plaidHoldings) {
+    const security = securityMap.get(h.security_id);
+    if (!security) continue;
+
+    const [acct] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.plaidAccountId, h.account_id),
+          eq(accounts.userId, userId)
+        )
+      )
+      .limit(1);
+
+    const securityType = security.type?.toLowerCase() ?? "other";
+    const ticker = security.ticker_symbol ?? null;
+    const name = security.name ?? security.ticker_symbol ?? "Unknown";
+
+    await db
+      .insert(holdings)
+      .values({
+        id: crypto.randomUUID(),
+        userId,
+        accountId: acct?.id ?? null,
+        plaidSecurityId: h.security_id,
+        ticker,
+        name,
+        securityType,
+        quantity: h.quantity != null ? String(h.quantity) : null,
+        price: h.institution_price != null ? String(h.institution_price) : null,
+        marketValue: String(h.institution_value ?? 0),
+        costBasis: h.cost_basis != null ? String(h.cost_basis) : null,
+        lastSynced: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [holdings.userId, holdings.plaidSecurityId],
+        set: {
+          quantity: h.quantity != null ? String(h.quantity) : null,
+          price: h.institution_price != null ? String(h.institution_price) : null,
+          marketValue: String(h.institution_value ?? 0),
+          costBasis: h.cost_basis != null ? String(h.cost_basis) : null,
+          lastSynced: new Date(),
+        },
+      });
+
+    synced++;
+  }
+
+  return synced;
 }

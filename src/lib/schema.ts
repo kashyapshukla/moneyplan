@@ -217,3 +217,21 @@ export const goals = pgTable("goals", {
   targetMonths: integer("target_months"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 }, (t) => [index("goals_user_id_idx").on(t.userId)]);
+
+export const holdings = pgTable("holdings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
+  plaidSecurityId: text("plaid_security_id"),
+  ticker: text("ticker"),
+  name: text("name").notNull(),
+  securityType: text("security_type"),
+  quantity: numeric("quantity", { precision: 16, scale: 6 }),
+  price: numeric("price", { precision: 12, scale: 4 }),
+  marketValue: numeric("market_value", { precision: 12, scale: 2 }).notNull(),
+  costBasis: numeric("cost_basis", { precision: 12, scale: 2 }),
+  lastSynced: timestamp("last_synced", { mode: "date" }).defaultNow().notNull(),
+}, (t) => [
+  index("holdings_user_id_idx").on(t.userId),
+  uniqueIndex("holdings_user_security_idx").on(t.userId, t.plaidSecurityId),
+]);
