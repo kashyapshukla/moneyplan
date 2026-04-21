@@ -21,3 +21,15 @@
     color: hsl(var(--foreground));
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+  }
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+}
