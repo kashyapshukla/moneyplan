@@ -20,9 +20,13 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
   const [data, accountBreakdown] = await Promise.all([
     getDashboardData(session.user.id),
-    getAccountBreakdown(session.user.id, new Date().getMonth() + 1, new Date().getFullYear()),
+    getAccountBreakdown(session.user.id, month, year),
   ]);
 
   const netWorth = data.latestSnapshot

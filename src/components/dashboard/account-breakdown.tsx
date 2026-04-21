@@ -1,15 +1,7 @@
 "use client";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-
-type AccountBreakdown = {
-  accountId: string;
-  accountName: string;
-  accountType: string;
-  income: number;
-  expenses: number;
-  net: number;
-};
+import type { AccountBreakdown } from "@/lib/dashboard";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US", {
@@ -40,7 +32,10 @@ export function AccountBreakdown({ accounts }: { accounts: AccountBreakdown[] })
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="account-breakdown-content"
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
       >
         <div>
@@ -59,7 +54,7 @@ export function AccountBreakdown({ accounts }: { accounts: AccountBreakdown[] })
       </button>
 
       {open && (
-        <div className="border-t border-slate-100 dark:border-slate-800">
+        <div id="account-breakdown-content" className="border-t border-slate-100 dark:border-slate-800">
           <div className="grid grid-cols-4 px-5 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
             <span>Account</span>
             <span className="text-right">Income</span>
