@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { OnboardingGuard } from "@/components/layout/onboarding-guard";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Header />
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
+      <InstallPrompt />
     </div>
   );
 }
