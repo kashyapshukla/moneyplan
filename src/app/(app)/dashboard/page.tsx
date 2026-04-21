@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getDashboardData } from "@/lib/dashboard";
+import { getDashboardData, getAccountBreakdown } from "@/lib/dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { BudgetHealth } from "@/components/dashboard/budget-health";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { SpendingChart } from "@/components/dashboard/spending-chart";
+import { AccountBreakdown } from "@/components/dashboard/account-breakdown";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -19,7 +20,10 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
-  const data = await getDashboardData(session.user.id);
+  const [data, accountBreakdown] = await Promise.all([
+    getDashboardData(session.user.id),
+    getAccountBreakdown(session.user.id, new Date().getMonth() + 1, new Date().getFullYear()),
+  ]);
 
   const netWorth = data.latestSnapshot
     ? parseFloat(data.latestSnapshot.netWorth)
@@ -102,6 +106,9 @@ export default async function DashboardPage() {
 
       {/* Recent transactions */}
       <RecentTransactions transactions={data.recentTxs} />
+
+      {/* Account breakdown */}
+      <AccountBreakdown accounts={accountBreakdown} />
     </div>
   );
 }
