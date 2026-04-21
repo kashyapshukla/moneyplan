@@ -32,21 +32,23 @@ export function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  if (!prompt || dismissed) return null;
-
+  // All hooks must be declared before any early return
   function dismiss() {
     localStorage.setItem("pwa-install-dismissed", "true");
     setDismissed(true);
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const install = useCallback(async () => {
     if (!prompt) return;
     await prompt.prompt();
     const { outcome } = await prompt.userChoice;
     if (outcome === "accepted") setPrompt(null);
     dismiss();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prompt]);
+
+  // Early return AFTER all hooks
+  if (!prompt || dismissed) return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg px-4 py-3 max-w-sm w-[calc(100%-2rem)]">
