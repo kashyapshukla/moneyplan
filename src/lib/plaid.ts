@@ -2,7 +2,7 @@ import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { accounts, transactions, holdings } from "@/lib/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import type { AccountType } from "@/lib/account-types";
 import type { TransactionCategory } from "@/lib/categories";
 import { categorizeTransactions } from "@/lib/gemini";
@@ -235,22 +235,33 @@ export async function syncInvestmentHoldings(
     securities.map((s) => [s.security_id, s])
   );
 
+  // Pre-fetch all accounts in a single query to avoid N+1
+  const plaidAccountIds = Array.from(new Set(plaidHoldings.map((h) => h.account_id)));
+
+  let acctMap = new Map<string, string>(); // plaidAccountId → internal accountId
+  if (plaidAccountIds.length > 0) {
+    const acctRows = await db
+      .select({ id: accounts.id, plaidAccountId: accounts.plaidAccountId })
+      .from(accounts)
+      .where(
+        and(
+          inArray(accounts.plaidAccountId, plaidAccountIds),
+          eq(accounts.userId, userId)
+        )
+      );
+    acctMap = new Map(acctRows.map((a) => [a.plaidAccountId!, a.id]));
+  }
+
   let synced = 0;
 
   for (const h of plaidHoldings) {
     const security = securityMap.get(h.security_id);
-    if (!security) continue;
+    if (!security) {
+      console.warn(`syncInvestmentHoldings: unknown security_id ${h.security_id}, skipping`);
+      continue;
+    }
 
-    const [acct] = await db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(
-        and(
-          eq(accounts.plaidAccountId, h.account_id),
-          eq(accounts.userId, userId)
-        )
-      )
-      .limit(1);
+    const accountId = acctMap.get(h.account_id) ?? null;
 
     const securityType = security.type?.toLowerCase() ?? "other";
     const ticker = security.ticker_symbol ?? null;
@@ -261,7 +272,7 @@ export async function syncInvestmentHoldings(
       .values({
         id: crypto.randomUUID(),
         userId,
-        accountId: acct?.id ?? null,
+        accountId,
         plaidSecurityId: h.security_id,
         ticker,
         name,

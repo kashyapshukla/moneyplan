@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { holdings, accounts } from "./schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export type Holding = {
   id: string;
@@ -34,7 +34,7 @@ export async function listHoldings(userId: string): Promise<Holding[]> {
     .from(holdings)
     .leftJoin(accounts, eq(holdings.accountId, accounts.id))
     .where(eq(holdings.userId, userId))
-    .orderBy(holdings.marketValue);
+    .orderBy(desc(holdings.marketValue));
 
   return rows
     .map(({ holding: h, accountName }) => {
