@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Download, X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -12,6 +12,11 @@ export function InstallPrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    // Check persisted dismissed state after mount (avoids SSR issues)
+    if (localStorage.getItem("pwa-install-dismissed") === "true") {
+      setDismissed(true);
+    }
+
     // Register service worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(console.error);
@@ -29,13 +34,19 @@ export function InstallPrompt() {
 
   if (!prompt || dismissed) return null;
 
-  async function install() {
+  function dismiss() {
+    localStorage.setItem("pwa-install-dismissed", "true");
+    setDismissed(true);
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const install = useCallback(async () => {
     if (!prompt) return;
     await prompt.prompt();
     const { outcome } = await prompt.userChoice;
     if (outcome === "accepted") setPrompt(null);
-    setDismissed(true);
-  }
+    dismiss();
+  }, [prompt]);
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg px-4 py-3 max-w-sm w-[calc(100%-2rem)]">
@@ -58,7 +69,7 @@ export function InstallPrompt() {
       </button>
       <button
         type="button"
-        onClick={() => setDismissed(true)}
+        onClick={dismiss}
         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex-shrink-0"
         aria-label="Dismiss install prompt"
       >

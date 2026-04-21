@@ -63,11 +63,21 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Pages: network-first with cache fallback
+  // Auth-protected pages are excluded from cache to avoid serving stale authenticated content
+  const UNCACHED_PATHS = ["/dashboard", "/transactions", "/budgets", "/goals", "/net-worth",
+    "/recurring", "/calendar", "/reports", "/ai-chat", "/settings", "/investments"];
+
   event.respondWith(
     fetch(request)
       .then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+        // Only cache non-authenticated pages (sign-in, static pages)
+        const isAuthPage = UNCACHED_PATHS.some(
+          (p) => url.pathname === p || url.pathname.startsWith(p + "/")
+        );
+        if (res.ok && !isAuthPage) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+        }
         return res;
       })
       .catch(() => caches.match(request))
