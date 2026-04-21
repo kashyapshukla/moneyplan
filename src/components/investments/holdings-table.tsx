@@ -40,8 +40,9 @@ export function HoldingsTable({
       if (!res.ok) throw new Error(data.error);
       setResult(`✓ ${data.synced} holdings updated`);
       router.refresh();
-    } catch {
-      setResult("Sync failed. Try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Sync failed. Try again.";
+      setResult(`Error: ${msg}`);
     } finally {
       setSyncing(false);
     }

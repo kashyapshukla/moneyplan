@@ -42,7 +42,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ synced });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("sync-holdings error:", msg);
-    return NextResponse.json({ error: "Sync failed. Please try again." }, { status: 500 });
+    const detail = err instanceof Error && "response" in err
+      ? JSON.stringify((err as { response?: unknown }).response)
+      : "";
+    console.error("sync-holdings error:", msg, detail);
+    return NextResponse.json({ error: msg || "Sync failed. Please try again." }, { status: 500 });
   }
 }
