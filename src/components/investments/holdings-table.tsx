@@ -36,8 +36,15 @@ export function HoldingsTable({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plaidItemId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      // Parse as text first to handle empty / non-JSON responses gracefully
+      const text = await res.text();
+      let data: { error?: string; synced?: number } = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server error ${res.status}${text ? ": " + text.slice(0, 120) : " (empty response)"}`);
+      }
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       setResult(`✓ ${data.synced} holdings updated`);
       router.refresh();
     } catch (err) {
