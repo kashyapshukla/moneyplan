@@ -1,6 +1,70 @@
 import { db } from "./db";
-import { holdings, accounts } from "./schema";
-import { eq, desc } from "drizzle-orm";
+import { holdings, accounts, transactions } from "./schema";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
+
+export type MonthlyInvestment = {
+  month: string;   // "Jan 2025"
+  year: number;
+  monthNum: number;
+  invested: number;
+};
+
+export async function getMonthlyInvestmentActivity(
+  userId: string,
+  months = 12
+): Promise<MonthlyInvestment[]> {
+  const since = new Date();
+  since.setMonth(since.getMonth() - months + 1);
+  since.setDate(1);
+  since.setHours(0, 0, 0, 0);
+
+  const rows = await db
+    .select({
+      year: sql<number>`EXTRACT(YEAR FROM ${transactions.date})::int`,
+      month: sql<number>`EXTRACT(MONTH FROM ${transactions.date})::int`,
+      invested: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount}::numeric > 0 THEN ${transactions.amount}::numeric ELSE 0 END), 0)`,
+    })
+    .from(transactions)
+    .innerJoin(accounts, eq(transactions.accountId, accounts.id))
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(accounts.type, "investment"),
+        gte(transactions.date, since)
+      )
+    )
+    .groupBy(
+      sql`EXTRACT(YEAR FROM ${transactions.date})`,
+      sql`EXTRACT(MONTH FROM ${transactions.date})`
+    )
+    .orderBy(
+      sql`EXTRACT(YEAR FROM ${transactions.date})`,
+      sql`EXTRACT(MONTH FROM ${transactions.date})`
+    );
+
+  const dataMap = new Map<string, number>();
+  for (const r of rows) {
+    dataMap.set(`${r.year}-${r.month}`, parseFloat(r.invested));
+  }
+
+  const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const result: MonthlyInvestment[] = [];
+  const now = new Date();
+
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    result.push({
+      month: `${MONTH_NAMES[m - 1]} ${y}`,
+      year: y,
+      monthNum: m,
+      invested: dataMap.get(`${y}-${m}`) ?? 0,
+    });
+  }
+
+  return result;
+}
 
 export type Holding = {
   id: string;

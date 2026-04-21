@@ -23,6 +23,7 @@ const navItems = [
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/net-worth", label: "Net Worth", icon: TrendingUp },
   { href: "/investments", label: "Investments", icon: BarChart2 },
+  { href: "/investment-activity", label: "Inv. Activity", icon: TrendingUp },
   { href: "/budgets", label: "Budgets", icon: Target },
   { href: "/goals", label: "Goals", icon: Flag },
   { href: "/recurring", label: "Recurring", icon: Repeat },
