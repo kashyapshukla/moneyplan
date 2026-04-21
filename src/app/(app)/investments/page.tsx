@@ -51,22 +51,20 @@ export default async function InvestmentsPage() {
         </p>
       </div>
 
-      {allHoldings.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-12 text-center">
-          <p className="text-slate-400 text-sm">No holdings found.</p>
-          <p className="text-slate-400 text-xs mt-1">
-            Connect an investment account (Robinhood, Fidelity, etc.) via Plaid on the Net Worth page.
-          </p>
-        </div>
-      ) : (
-        <>
-          <AllocationChart byType={summary.byType} totalValue={summary.totalValue} />
-          <HoldingsTable
-            holdings={allHoldings}
-            plaidItemId={investAcct?.plaidItemId ?? null}
-          />
-        </>
+      {allHoldings.length > 0 && (
+        <AllocationChart byType={summary.byType} totalValue={summary.totalValue} />
       )}
+
+      {/* HoldingsTable is always shown so the Sync button is accessible even on first load */}
+      <HoldingsTable
+        holdings={allHoldings}
+        plaidItemId={investAcct?.plaidItemId ?? null}
+        emptyMessage={
+          investAcct?.plaidItemId
+            ? "Click Sync to load your Robinhood / Vanguard holdings from Plaid."
+            : "Connect an investment account (Robinhood, Fidelity, etc.) via Plaid on the Net Worth page."
+        }
+      />
     </div>
   );
 }

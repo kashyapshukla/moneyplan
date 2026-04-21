@@ -16,9 +16,11 @@ function fmtQty(n: number) {
 export function HoldingsTable({
   holdings,
   plaidItemId,
+  emptyMessage,
 }: {
   holdings: Holding[];
   plaidItemId: string | null;
+  emptyMessage?: string;
 }) {
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -70,8 +72,8 @@ export function HoldingsTable({
       {holdings.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-slate-400 text-sm">No holdings found.</p>
-          <p className="text-slate-400 text-xs mt-1">
-            Connect an investment account via Plaid or click Sync.
+          <p className="text-slate-400 text-xs mt-1 max-w-xs mx-auto">
+            {emptyMessage ?? "Connect an investment account via Plaid or click Sync."}
           </p>
         </div>
       ) : (
