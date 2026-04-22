@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useTheme } from "@/lib/theme";
 
 type DataPoint = {
   label: string;
@@ -49,11 +50,20 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function IncomeExpenseChart({ data }: { data: DataPoint[] }) {
+  const { resolvedTheme } = useTheme();
+  const tooltipStyle = {
+    borderRadius: "8px",
+    fontSize: "12px",
+    border: `1px solid ${resolvedTheme === "dark" ? "#334155" : "#e2e8f0"}`,
+    backgroundColor: resolvedTheme === "dark" ? "#1e293b" : "#ffffff",
+    color: resolvedTheme === "dark" ? "#f1f5f9" : "#0f172a",
+  };
+
   if (data.every((d) => d.income === 0 && d.expenses === 0)) {
     return (
-      <div className="rounded-xl border bg-white p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Income vs Expenses</h3>
-        <div className="flex items-center justify-center py-10 text-slate-400 text-sm">
+      <div className="rounded-xl border bg-white dark:bg-slate-900 dark:border-slate-700 p-5">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-white mb-4">Income vs Expenses</h3>
+        <div className="flex items-center justify-center py-10 text-slate-400 dark:text-slate-400 text-sm">
           No transaction data yet
         </div>
       </div>
@@ -61,16 +71,16 @@ export function IncomeExpenseChart({ data }: { data: DataPoint[] }) {
   }
 
   return (
-    <div className="rounded-xl border bg-white p-5">
+    <div className="rounded-xl border bg-white dark:bg-slate-900 dark:border-slate-700 p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-700">Income vs Expenses</h3>
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Income vs Expenses</h3>
+        <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-400">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-slate-300 inline-block"/>Forecast</span>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={4}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={resolvedTheme === "dark" ? "#334155" : "#f1f5f9"} vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
           <YAxis
             tick={{ fontSize: 11, fill: "#94a3b8" }}
@@ -78,7 +88,7 @@ export function IncomeExpenseChart({ data }: { data: DataPoint[] }) {
             tickLine={false}
             tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} contentStyle={tooltipStyle} />
           <Legend
             iconType="square"
             iconSize={8}
