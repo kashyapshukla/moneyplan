@@ -42,8 +42,8 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {MONTH_NAMES[data.month - 1]} {data.year} overview
         </p>
       </div>

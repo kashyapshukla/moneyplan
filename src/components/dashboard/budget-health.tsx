@@ -32,9 +32,9 @@ export function BudgetHealth({
   const nearLimit = budgets.filter((b) => b.percentUsed >= 80 && b.percentUsed < 100);
 
   return (
-    <div className="rounded-xl border bg-white p-5 space-y-4">
+    <div className="rounded-xl border bg-white dark:border-slate-700 dark:bg-slate-900 p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">Budget Health</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Budget Health</h3>
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${bg} ${color}`}>
           {text}
         </span>
@@ -90,16 +90,16 @@ export function BudgetHealth({
 
       {/* Mini budget bars */}
       {budgets.length > 0 && (
-        <div className="space-y-2 border-t pt-3">
+        <div className="space-y-2 border-t dark:border-slate-700 pt-3">
           {budgets.slice(0, 4).map((b) => (
             <div key={b.category} className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">{b.category}</span>
-                <span className={b.percentUsed >= 100 ? "text-red-600" : "text-slate-400"}>
+                <span className="text-slate-500 dark:text-slate-300">{b.category}</span>
+                <span className={b.percentUsed >= 100 ? "text-red-600" : "text-slate-400 dark:text-slate-500"}>
                   {fmt(b.spent)} / {fmt(parseFloat(b.monthlyLimit))}
                 </span>
               </div>
-              <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
                     b.percentUsed >= 100 ? "bg-red-500" : b.percentUsed >= 80 ? "bg-amber-400" : "bg-emerald-400"
@@ -110,7 +110,7 @@ export function BudgetHealth({
             </div>
           ))}
           {budgets.length > 4 && (
-            <p className="text-xs text-slate-400">+{budgets.length - 4} more — see Budgets page</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">+{budgets.length - 4} more — see Budgets page</p>
           )}
         </div>
       )}
