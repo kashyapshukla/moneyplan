@@ -27,15 +27,15 @@ export function OnboardingBanner({
   }
 
   return (
-    <div className="rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50 p-6">
+    <div className="rounded-xl border-2 border-dashed border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-6">
       <div className="flex items-start gap-4">
-        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="h-5 w-5 text-indigo-600" />
+        <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
         </div>
         <div className="flex-1 space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">No budgets set for this month</h3>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">No budgets set for this month</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               Let AI analyse your income and spending history to suggest personalised limits in seconds.
             </p>
           </div>
