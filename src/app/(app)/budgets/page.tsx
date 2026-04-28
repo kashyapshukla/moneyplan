@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { listBudgetsWithSpending, getTopTransactionsByCategory } from "@/lib/budgets";
+import { listBudgetsWithSpending, getTopTransactionsByCategory, copyBudgetsFromLastMonth } from "@/lib/budgets";
 import { BudgetsList } from "@/components/budgets/budgets-list";
 import { MonthNav } from "@/components/budgets/month-nav";
 import { OnboardingBanner } from "@/components/budgets/onboarding-banner";
@@ -17,6 +17,7 @@ export type EnrichedBudget = {
   spent: number;
   remaining: number;
   percentUsed: number;
+  projectedRecurring: number;
   // enriched
   dailyAllowance: number;
   velocity: "fast" | "normal" | "slow" | "none";
@@ -41,11 +42,20 @@ export default async function BudgetsPage({
   const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
   const daysLeft = isCurrentMonth ? daysInMonth - now.getDate() : 0;
 
-  const [budgets, topTxByCategory, alerts] = await Promise.all([
+  let [budgets, topTxByCategory, alerts] = await Promise.all([
     listBudgetsWithSpending(session.user.id, month, year),
     getTopTransactionsByCategory(session.user.id, month, year, 5),
     getSpendingAlerts(session.user.id),
   ]);
+
+  // Auto-copy budgets from last month if this month has none (carry-forward)
+  if (budgets.length === 0) {
+    const copied = await copyBudgetsFromLastMonth(session.user.id, month, year);
+    if (copied > 0) {
+      // Reload budgets after copying
+      budgets = await listBudgetsWithSpending(session.user.id, month, year);
+    }
+  }
 
   // Enrich each budget with velocity + daily allowance
   const enriched: EnrichedBudget[] = budgets.map((b) => {
@@ -85,16 +95,16 @@ export default async function BudgetsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Budgets</h1>
-          <p className="text-sm text-slate-500 mt-1">Set monthly limits per category</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Budgets</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Set monthly limits per category</p>
         </div>
         <MonthNav month={month} year={year} />
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-slate-600">{monthName}</span>
+        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{monthName}</span>
         {isCurrentMonth && (
-          <span className="text-xs bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5 font-medium">
+          <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 rounded-full px-2 py-0.5 font-medium">
             Current Month
           </span>
         )}

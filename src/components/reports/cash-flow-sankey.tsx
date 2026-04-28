@@ -90,6 +90,9 @@ export function CashFlowSankey({ data, label }: Props) {
     );
   }
 
+  const isDeficit = netSavings < 0;
+  const DEFICIT_COLOR = "#ef4444";
+
   // Build right-column nodes: savings first (top), then expenses sorted desc
   const rightNodes: { label: string; amount: number; color: string; key: string }[] = [];
 
@@ -100,7 +103,7 @@ export function CashFlowSankey({ data, label }: Props) {
     rightNodes.push({ label: cat.category, amount: cat.amount, color: catColor(cat.category), key: cat.category });
   }
 
-  // Right side total = expenses + net savings (always the larger of the two sides)
+  // Right side total = expenses (+ net savings if positive; deficit is shown separately)
   const rightTotal = rightNodes.reduce((s, n) => s + n.amount, 0) || 1;
   // Overall scale = whichever side is bigger
   const overallTotal = Math.max(totalIncome, rightTotal);
@@ -160,11 +163,19 @@ export function CashFlowSankey({ data, label }: Props) {
               <span className="text-slate-500">Expenses</span>
               <span className="font-bold text-slate-800 tabular-nums">{fmtCurrency(totalExpenses)}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-teal-50 border border-teal-100 rounded-full px-3 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0" />
-              <span className="text-slate-500">Saved</span>
-              <span className="font-bold text-slate-800 tabular-nums">{fmtPct(savingsRate)}</span>
-            </div>
+            {isDeficit ? (
+              <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                <span className="text-slate-500">Deficit</span>
+                <span className="font-bold text-red-500 dark:text-red-400 tabular-nums">{fmtCurrency(Math.abs(netSavings))}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-teal-50 border border-teal-100 rounded-full px-3 py-1.5">
+                <span className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0" />
+                <span className="text-slate-500">Saved</span>
+                <span className="font-bold text-slate-800 tabular-nums">{fmtPct(savingsRate)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -252,6 +263,20 @@ export function CashFlowSankey({ data, label }: Props) {
           ))}
         </svg>
       </div>
+
+      {/* Deficit banner */}
+      {isDeficit && (
+        <div className="mx-6 mb-4 flex items-center gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+          <span className="text-red-500 text-lg font-black">▼</span>
+          <div>
+            <p className="text-sm font-bold text-red-700">Deficit this period</p>
+            <p className="text-xs text-red-500 mt-0.5">
+              Expenses exceeded income by <span className="font-semibold">{fmtCurrency(Math.abs(netSavings))}</span>
+            </p>
+          </div>
+          <span className="ml-auto text-xl font-black text-red-500 tabular-nums">{fmtCurrency(Math.abs(netSavings))}</span>
+        </div>
+      )}
 
       {/* Legend dots */}
       <div className="px-6 pb-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-50 pt-3">

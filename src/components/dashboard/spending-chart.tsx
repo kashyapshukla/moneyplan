@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useTheme } from "@/lib/theme";
 
 const COLORS = [
   "#f97316", // Food - orange
@@ -20,6 +21,15 @@ function fmt(n: number) {
 }
 
 export function SpendingChart({ spendingByCategory }: { spendingByCategory: Record<string, number> }) {
+  const { resolvedTheme } = useTheme();
+  const tooltipStyle = {
+    borderRadius: "8px",
+    fontSize: "12px",
+    border: `1px solid ${resolvedTheme === "dark" ? "#334155" : "#e2e8f0"}`,
+    backgroundColor: resolvedTheme === "dark" ? "#1e293b" : "#ffffff",
+    color: resolvedTheme === "dark" ? "#f1f5f9" : "#0f172a",
+  };
+
   const data = CATEGORY_ORDER
     .filter((cat) => (spendingByCategory[cat] ?? 0) > 0)
     .map((cat, i) => ({
@@ -30,9 +40,9 @@ export function SpendingChart({ spendingByCategory }: { spendingByCategory: Reco
 
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border bg-white p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Spending by Category</h3>
-        <div className="flex items-center justify-center py-10 text-slate-400 text-sm">
+      <div className="rounded-xl border bg-white dark:border-slate-700 dark:bg-slate-900 p-5">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-white mb-4">Spending by Category</h3>
+        <div className="flex items-center justify-center py-10 text-slate-400 dark:text-slate-400 text-sm">
           No spending data for this month
         </div>
       </div>
@@ -40,8 +50,8 @@ export function SpendingChart({ spendingByCategory }: { spendingByCategory: Reco
   }
 
   return (
-    <div className="rounded-xl border bg-white p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">Spending by Category</h3>
+    <div className="rounded-xl border bg-white dark:border-slate-700 dark:bg-slate-900 p-5">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-white mb-4">Spending by Category</h3>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
           <Pie
@@ -60,7 +70,7 @@ export function SpendingChart({ spendingByCategory }: { spendingByCategory: Reco
           </Pie>
           <Tooltip
             formatter={(value) => [fmt(Number(value)), "Spent"]}
-            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
+            contentStyle={tooltipStyle}
           />
           <Legend
             iconType="circle"

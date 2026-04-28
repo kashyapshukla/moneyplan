@@ -96,7 +96,7 @@ export function CashFlowSection() {
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               range === r.value
                 ? "bg-indigo-600 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
             }`}
           >
             {r.label}
@@ -106,7 +106,7 @@ export function CashFlowSection() {
 
       {/* Chart */}
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 flex items-center justify-center min-h-[200px]">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 flex items-center justify-center min-h-[200px]">
           <div className="flex flex-col items-center gap-2 text-slate-400">
             <div className="w-8 h-8 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />
             <span className="text-sm">Loading cash flow…</span>

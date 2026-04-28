@@ -25,18 +25,18 @@ export function SpendingAlerts({ alerts }: { alerts: SpendingAlert[] }) {
       {visible.map((alert) => (
         <div
           key={alert.category}
-          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
+          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-4 py-3"
         >
           <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-900">{alert.message}</p>
-            <p className="text-xs text-amber-700 mt-0.5">
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{alert.message}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
               This month: <strong>{fmt(alert.currentAmount)}</strong> · 3-month avg: <strong>{fmt(alert.avgAmount)}</strong>
             </p>
           </div>
           <button
             onClick={() => setDismissed((prev) => new Set([...Array.from(prev), alert.category]))}
-            className="text-amber-400 hover:text-amber-600 flex-shrink-0"
+            className="text-amber-400 dark:text-amber-500 hover:text-amber-600 flex-shrink-0"
           >
             <X className="h-4 w-4" />
           </button>

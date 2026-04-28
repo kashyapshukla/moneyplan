@@ -39,10 +39,10 @@ function ItemRow({
   onToggle: (id: string, field: "isSubscription" | "isActive", value: boolean) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+    <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 truncate">{item.displayName}</p>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{item.displayName}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
           {FREQ_LABEL[item.frequency]}
           {item.dayOfMonth && item.frequency === "monthly" ? ` · ~day ${item.dayOfMonth}` : ""}
           {item.nextExpected
@@ -51,14 +51,14 @@ function ItemRow({
         </p>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-bold tabular-nums text-slate-900">{fmt(item.amount)}</p>
-        <p className="text-xs text-slate-400">{fmt(toMonthly(item.amount, item.frequency))}/mo</p>
+        <p className="text-sm font-bold tabular-nums text-slate-900 dark:text-white">{fmt(item.amount)}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{fmt(toMonthly(item.amount, item.frequency))}/mo</p>
       </div>
       <div className="flex items-center gap-1">
         {!item.isSubscription && (
           <button
             onClick={() => onToggle(item.id, "isSubscription", true)}
-            className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors font-medium"
+            className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/30 transition-colors font-medium"
             title="Mark as subscription"
           >
             <Tag className="h-3 w-3" />
@@ -115,9 +115,9 @@ export function RecurringList({ initialItems }: { initialItems: RecurringItem[] 
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-        <p className="text-slate-400 text-sm">No recurring transactions detected yet.</p>
-        <p className="text-slate-400 text-xs mt-1">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-12 text-center">
+        <p className="text-slate-400 dark:text-slate-500 text-sm">No recurring transactions detected yet.</p>
+        <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
           Click &quot;Detect Recurring&quot; to scan your transactions.
         </p>
       </div>
@@ -127,11 +127,11 @@ export function RecurringList({ initialItems }: { initialItems: RecurringItem[] 
   return (
     <div className="space-y-4">
       {subscriptions.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Subscriptions</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Subscriptions</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 {subscriptions.length} active · {fmt(monthlySubscriptionTotal)}/mo ·{" "}
                 {fmt(monthlySubscriptionTotal * 12)}/yr
               </p>
@@ -144,11 +144,11 @@ export function RecurringList({ initialItems }: { initialItems: RecurringItem[] 
       )}
 
       {bills.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Recurring Bills</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Recurring Bills</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 {bills.length} detected · {fmt(monthlyBillTotal)}/mo committed
               </p>
             </div>

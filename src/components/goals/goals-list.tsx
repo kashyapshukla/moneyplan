@@ -89,14 +89,14 @@ export function GoalsList({
               : null;
 
           return (
-            <div key={g.id} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+            <div key={g.id} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   {GOAL_ICONS[g.type]}
                   <div>
-                    <p className="text-sm font-bold text-slate-900">{g.name}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{g.name}</p>
                     {g.linkedAccountName && (
-                      <p className="text-xs text-slate-400">{g.linkedAccountName}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">{g.linkedAccountName}</p>
                     )}
                   </div>
                 </div>
@@ -110,30 +110,30 @@ export function GoalsList({
 
               {g.targetAmount != null && (
                 <div>
-                  <div className="flex justify-between text-xs text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
                     <span>{fmt(g.currentAmount)}</span>
                     <span>{fmt(g.targetAmount)}</span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100">
+                  <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700">
                     <div
                       className={`h-2 rounded-full transition-all ${GOAL_COLORS[g.type]}`}
                       style={{ width: `${g.progressPct}%` }}
                     />
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{g.progressPct.toFixed(1)}% complete</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{g.progressPct.toFixed(1)}% complete</p>
                 </div>
               )}
 
               {g.type === "emergency_fund" && g.targetMonths && (
-                <p className="text-xs text-slate-600">Target: {g.targetMonths} months of expenses</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Target: {g.targetMonths} months of expenses</p>
               )}
 
               <div className="space-y-1">
                 {g.monthlyContribution != null && (
-                  <p className="text-xs text-slate-500">Contributing {fmt(g.monthlyContribution)}/mo</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Contributing {fmt(g.monthlyContribution)}/mo</p>
                 )}
                 {g.type === "debt_payoff" && g.interestRate > 0 && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {g.interestRate}% APR
                     {interest != null && isFinite(interest) && (
                       <span className="text-red-500 ml-1">· {fmt(interest)} total interest</span>
@@ -155,10 +155,10 @@ export function GoalsList({
 
         <button
           onClick={() => setAddOpen(true)}
-          className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-5 flex flex-col items-center justify-center gap-2 hover:border-indigo-300 hover:bg-indigo-50 transition-colors min-h-[160px]"
+          className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 flex flex-col items-center justify-center gap-2 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors min-h-[160px]"
         >
-          <Plus className="h-6 w-6 text-slate-300" />
-          <span className="text-sm text-slate-400">Add Goal</span>
+          <Plus className="h-6 w-6 text-slate-300 dark:text-slate-600" />
+          <span className="text-sm text-slate-400 dark:text-slate-500">Add Goal</span>
         </button>
       </div>
 

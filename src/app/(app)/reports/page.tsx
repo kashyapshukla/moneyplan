@@ -68,8 +68,8 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Reports</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           6-month history + 3-month spending forecast
         </p>
       </div>
@@ -77,9 +77,9 @@ export default async function ReportsPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {/* Income */}
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Avg Monthly Income</p>
-          <p className="text-xl font-bold tabular-nums text-emerald-600">{fmt(avgIncome)}</p>
+        <div className="rounded-xl border bg-white dark:bg-slate-900 dark:border-slate-700 p-5">
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1">Avg Monthly Income</p>
+          <p className="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{fmt(avgIncome)}</p>
         </div>
 
         {/* Expenses — clickable breakdown */}
@@ -90,18 +90,18 @@ export default async function ReportsPage() {
         />
 
         {/* Saved / Invested */}
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Avg Saved / Invested</p>
-          <p className={`text-xl font-bold tabular-nums ${avgSavingsRate >= 20 ? "text-teal-600" : avgSavingsRate >= 10 ? "text-indigo-600" : "text-amber-600"}`}>
+        <div className="rounded-xl border bg-white dark:bg-slate-900 dark:border-slate-700 p-5">
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1">Avg Saved / Invested</p>
+          <p className={`text-xl font-bold tabular-nums ${avgSavingsRate >= 20 ? "text-teal-600" : avgSavingsRate >= 10 ? "text-indigo-600 dark:text-blue-400" : "text-amber-600"}`}>
             {fmt(avgSaved)} / {fmt(avgInvested)}
           </p>
-          <p className="text-xs text-slate-400 mt-0.5">{avgSavingsRate.toFixed(1)}% of income</p>
+          <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">{avgSavingsRate.toFixed(1)}% of income</p>
         </div>
 
         {/* Projected annual savings */}
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Projected Annual Savings</p>
-          <p className={`text-xl font-bold tabular-nums ${projectedAnnualSavings >= 0 ? "text-indigo-600" : "text-red-600"}`}>
+        <div className="rounded-xl border bg-white dark:bg-slate-900 dark:border-slate-700 p-5">
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1">Projected Annual Savings</p>
+          <p className={`text-xl font-bold tabular-nums ${projectedAnnualSavings >= 0 ? "text-indigo-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
             {fmt(projectedAnnualSavings)}
           </p>
         </div>

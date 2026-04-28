@@ -85,17 +85,17 @@ export function NetWorthSummary({ accounts }: Props) {
   const totalLiabilities = liabilityGroups.reduce((s, g) => s + g.total, 0);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-5">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 space-y-5">
       {/* Header + toggle */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700">Summary</h2>
-        <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-white">Summary</h2>
+        <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden text-xs">
           <button
             type="button"
             className={`px-3 py-1 font-medium transition-colors ${
               mode === "totals"
                 ? "bg-slate-900 text-white"
-                : "bg-white text-slate-500 hover:text-slate-700"
+                : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700"
             }`}
             onClick={() => setMode("totals")}
           >
@@ -106,7 +106,7 @@ export function NetWorthSummary({ accounts }: Props) {
             className={`px-3 py-1 font-medium transition-colors ${
               mode === "percent"
                 ? "bg-slate-900 text-white"
-                : "bg-white text-slate-500 hover:text-slate-700"
+                : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700"
             }`}
             onClick={() => setMode("percent")}
           >
@@ -118,10 +118,10 @@ export function NetWorthSummary({ accounts }: Props) {
       {/* Assets */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Assets
           </span>
-          <span className="text-sm font-bold text-slate-900 tabular-nums">
+          <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
             {fmtCompact(totalAssets)}
           </span>
         </div>
@@ -152,8 +152,8 @@ export function NetWorthSummary({ accounts }: Props) {
                 className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ backgroundColor: g.color }}
               />
-              <span className="text-xs text-slate-600 flex-1">{g.label}</span>
-              <span className="text-xs font-semibold text-slate-800 tabular-nums">
+              <span className="text-xs text-slate-600 dark:text-slate-200 flex-1">{g.label}</span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-white tabular-nums">
                 {mode === "totals" ? fmtFull(g.total) : fmtPct(g.total, totalAssets)}
               </span>
             </div>
@@ -161,15 +161,15 @@ export function NetWorthSummary({ accounts }: Props) {
         </div>
       </div>
 
-      <div className="border-t border-slate-100" />
+      <div className="border-t border-slate-100 dark:border-slate-800" />
 
       {/* Liabilities */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Liabilities
           </span>
-          <span className="text-sm font-bold text-red-600 tabular-nums">
+          <span className="text-sm font-bold text-red-600 dark:text-red-400 tabular-nums">
             {fmtCompact(totalLiabilities)}
           </span>
         </div>
@@ -200,8 +200,8 @@ export function NetWorthSummary({ accounts }: Props) {
                 className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ backgroundColor: g.color }}
               />
-              <span className="text-xs text-slate-600 flex-1">{g.label}</span>
-              <span className="text-xs font-semibold text-red-600 tabular-nums">
+              <span className="text-xs text-slate-600 dark:text-slate-200 flex-1">{g.label}</span>
+              <span className="text-xs font-semibold text-red-600 dark:text-red-400 tabular-nums">
                 {mode === "totals" ? fmtFull(g.total) : fmtPct(g.total, totalLiabilities)}
               </span>
             </div>
@@ -210,11 +210,11 @@ export function NetWorthSummary({ accounts }: Props) {
       </div>
 
       {/* Net worth line */}
-      <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-700">Net Worth</span>
+      <div className="border-t border-slate-200 dark:border-slate-800 pt-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-slate-700 dark:text-white">Net Worth</span>
         <span
           className={`text-sm font-bold tabular-nums ${
-            totalAssets - totalLiabilities >= 0 ? "text-emerald-700" : "text-red-600"
+            totalAssets - totalLiabilities >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
           }`}
         >
           {fmtFull(totalAssets - totalLiabilities)}

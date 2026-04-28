@@ -15,17 +15,17 @@ type Transaction = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Food: "bg-orange-100 text-orange-700",
-  Housing: "bg-blue-100 text-blue-700",
-  Transport: "bg-yellow-100 text-yellow-700",
-  Health: "bg-green-100 text-green-700",
-  Entertainment: "bg-purple-100 text-purple-700",
-  Shopping: "bg-pink-100 text-pink-700",
-  Income: "bg-emerald-100 text-emerald-700",
-  Investment: "bg-indigo-100 text-indigo-700",
-  Savings: "bg-teal-100 text-teal-700",
-  Transfer: "bg-sky-100 text-sky-700",
-  Other: "bg-slate-100 text-slate-700",
+  Food: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  Housing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  Transport: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+  Health: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  Entertainment: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  Shopping: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+  Income: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  Investment: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
+  Savings: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
+  Transfer: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300",
+  Other: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300",
 };
 
 export function TransactionsTable({ transactions }: { transactions: Transaction[] }) {
@@ -51,7 +51,7 @@ export function TransactionsTable({ transactions }: { transactions: Transaction[
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border bg-white py-20 text-slate-400">
+      <div className="flex flex-col items-center justify-center rounded-lg border bg-white dark:bg-slate-900 dark:border-slate-700 py-20 text-slate-400">
         <p className="text-lg font-medium">No transactions yet</p>
         <p className="text-sm mt-1">Upload a CSV or add one manually</p>
       </div>
@@ -60,10 +60,10 @@ export function TransactionsTable({ transactions }: { transactions: Transaction[
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <div className="overflow-x-auto rounded-lg border bg-white dark:bg-slate-900 dark:border-slate-700">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr className="border-b bg-slate-50 dark:bg-slate-800 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3">Category</th>
@@ -72,16 +72,16 @@ export function TransactionsTable({ transactions }: { transactions: Transaction[
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y dark:divide-slate-800">
             {data.map((tx) => {
               const amount = parseFloat(tx.amount);
               const isIncome = amount > 0;
               return (
-                <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {new Date(tx.date).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 font-medium text-slate-900 max-w-xs truncate">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-white max-w-xs truncate">
                     {tx.description}
                   </td>
                   <td className="px-4 py-3">
@@ -89,10 +89,10 @@ export function TransactionsTable({ transactions }: { transactions: Transaction[
                       {tx.category}
                     </span>
                   </td>
-                  <td className={`px-4 py-3 text-right font-medium tabular-nums ${isIncome ? "text-emerald-600" : "text-slate-900"}`}>
+                  <td className={`px-4 py-3 text-right font-medium tabular-nums ${isIncome ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-red-400"}`}>
                     {isIncome ? "+" : ""}${Math.abs(amount).toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs capitalize">
+                  <td className="px-4 py-3 text-slate-400 dark:text-slate-400 text-xs capitalize">
                     {tx.source.replace("_", " ")}
                   </td>
                   <td className="px-4 py-3">

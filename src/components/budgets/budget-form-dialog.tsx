@@ -81,12 +81,12 @@ export function BudgetFormDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Category</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
             <select
               value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
               disabled={!!initial?.id}
-              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400 disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:focus:border-slate-500 disabled:bg-slate-50 dark:disabled:bg-slate-700 disabled:text-slate-400"
             >
               {availableCategories.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
@@ -94,7 +94,7 @@ export function BudgetFormDialog({
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Monthly Limit ($)</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Monthly Limit ($)</label>
             <input
               type="number"
               required
@@ -103,7 +103,7 @@ export function BudgetFormDialog({
               value={form.monthlyLimit}
               onChange={(e) => setForm((f) => ({ ...f, monthlyLimit: e.target.value }))}
               placeholder="e.g. 500"
-              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className="w-full rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-3 py-2 text-sm outline-none focus:border-slate-400 dark:focus:border-slate-500"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

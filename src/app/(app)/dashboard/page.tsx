@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getDashboardData } from "@/lib/dashboard";
+import { getDashboardData, getAccountBreakdown } from "@/lib/dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { BudgetHealth } from "@/components/dashboard/budget-health";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { SpendingChart } from "@/components/dashboard/spending-chart";
+import { AccountBreakdown } from "@/components/dashboard/account-breakdown";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -19,7 +20,14 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
-  const data = await getDashboardData(session.user.id);
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  const [data, accountBreakdown] = await Promise.all([
+    getDashboardData(session.user.id),
+    getAccountBreakdown(session.user.id, month, year),
+  ]);
 
   const netWorth = data.latestSnapshot
     ? parseFloat(data.latestSnapshot.netWorth)
@@ -34,8 +42,8 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {MONTH_NAMES[data.month - 1]} {data.year} overview
         </p>
       </div>
@@ -102,6 +110,9 @@ export default async function DashboardPage() {
 
       {/* Recent transactions */}
       <RecentTransactions transactions={data.recentTxs} />
+
+      {/* Account breakdown */}
+      <AccountBreakdown accounts={accountBreakdown} />
     </div>
   );
 }
