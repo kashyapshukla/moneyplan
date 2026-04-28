@@ -3,6 +3,7 @@ import { budgets, transactions } from "./schema";
 import { eq, and, gte, lte, lt, sql, ne, inArray } from "drizzle-orm";
 import { TransactionCategory } from "./transactions";
 import { getIncomeSourceDescriptions } from "./reports";
+import { listRecurring } from "./recurring";
 
 export type Budget = {
   id: string;
@@ -16,6 +17,7 @@ export type BudgetWithSpending = Budget & {
   spent: number;
   remaining: number;
   percentUsed: number;
+  projectedRecurring: number;
 };
 
 export async function listBudgets(
@@ -81,17 +83,31 @@ export async function listBudgetsWithSpending(
   month: number,
   year: number
 ): Promise<BudgetWithSpending[]> {
-  const [budgetList, spending] = await Promise.all([
+  const [budgetList, spending, recurringItems] = await Promise.all([
     listBudgets(userId, month, year),
     getSpendingByCategory(userId, month, year),
+    listRecurring(userId),
   ]);
+
+  // Build a map of monthly-equivalent recurring spend per category
+  const recurringByCategory = new Map<string, number>();
+  for (const item of recurringItems) {
+    const monthly =
+      item.frequency === "weekly" ? (item.amount * 52) / 12 :
+      item.frequency === "biweekly" ? (item.amount * 26) / 12 :
+      item.frequency === "annual" ? item.amount / 12 :
+      item.amount;
+    const cat = item.category as string;
+    recurringByCategory.set(cat, (recurringByCategory.get(cat) ?? 0) + monthly);
+  }
 
   return budgetList.map((b) => {
     const limit = parseFloat(b.monthlyLimit);
     const spent = spending[b.category] ?? 0;
     const remaining = Math.max(0, limit - spent);
     const percentUsed = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0;
-    return { ...b, spent, remaining, percentUsed };
+    const projectedRecurring = Math.round((recurringByCategory.get(b.category) ?? 0) * 100) / 100;
+    return { ...b, spent, remaining, percentUsed, projectedRecurring };
   });
 }
 
@@ -199,6 +215,58 @@ export async function getTopTransactionsByCategory(
     }
   }
   return byCategory;
+}
+
+export async function copyBudgetsFromLastMonth(
+  userId: string,
+  month: number,
+  year: number
+): Promise<number> {
+  // Check if target month already has budgets
+  const existing = await db
+    .select({ id: budgets.id })
+    .from(budgets)
+    .where(
+      and(
+        eq(budgets.userId, userId),
+        eq(budgets.month, month),
+        eq(budgets.year, year)
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) return 0; // already has budgets
+
+  // Get last month's budgets
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+
+  const lastMonthBudgets = await db
+    .select()
+    .from(budgets)
+    .where(
+      and(
+        eq(budgets.userId, userId),
+        eq(budgets.month, prevMonth),
+        eq(budgets.year, prevYear)
+      )
+    );
+
+  if (lastMonthBudgets.length === 0) return 0;
+
+  // Copy them to the target month
+  await db.insert(budgets).values(
+    lastMonthBudgets.map((b) => ({
+      id: crypto.randomUUID(),
+      userId,
+      category: b.category,
+      monthlyLimit: b.monthlyLimit,
+      month,
+      year,
+    }))
+  );
+
+  return lastMonthBudgets.length;
 }
 
 export async function deleteBudget(userId: string, id: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { listBudgetsWithSpending, getTopTransactionsByCategory } from "@/lib/budgets";
+import { listBudgetsWithSpending, getTopTransactionsByCategory, copyBudgetsFromLastMonth } from "@/lib/budgets";
 import { BudgetsList } from "@/components/budgets/budgets-list";
 import { MonthNav } from "@/components/budgets/month-nav";
 import { OnboardingBanner } from "@/components/budgets/onboarding-banner";
@@ -17,6 +17,7 @@ export type EnrichedBudget = {
   spent: number;
   remaining: number;
   percentUsed: number;
+  projectedRecurring: number;
   // enriched
   dailyAllowance: number;
   velocity: "fast" | "normal" | "slow" | "none";
@@ -41,11 +42,20 @@ export default async function BudgetsPage({
   const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
   const daysLeft = isCurrentMonth ? daysInMonth - now.getDate() : 0;
 
-  const [budgets, topTxByCategory, alerts] = await Promise.all([
+  let [budgets, topTxByCategory, alerts] = await Promise.all([
     listBudgetsWithSpending(session.user.id, month, year),
     getTopTransactionsByCategory(session.user.id, month, year, 5),
     getSpendingAlerts(session.user.id),
   ]);
+
+  // Auto-copy budgets from last month if this month has none (carry-forward)
+  if (budgets.length === 0) {
+    const copied = await copyBudgetsFromLastMonth(session.user.id, month, year);
+    if (copied > 0) {
+      // Reload budgets after copying
+      budgets = await listBudgetsWithSpending(session.user.id, month, year);
+    }
+  }
 
   // Enrich each budget with velocity + daily allowance
   const enriched: EnrichedBudget[] = budgets.map((b) => {

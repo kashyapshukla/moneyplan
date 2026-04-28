@@ -325,6 +325,13 @@ function CategoryCard({
           )}
         </div>
 
+        {/* ── Projected recurring spend ── */}
+        {b.projectedRecurring > 0 && (
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            <span className="text-indigo-500">↻</span> {fmtExact(b.projectedRecurring)}/mo committed (recurring)
+          </p>
+        )}
+
         {/* ── Top transaction callout ── */}
         {b.topMerchant && (
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
