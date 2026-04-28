@@ -1,8 +1,9 @@
 import { db } from "./db";
 import { transactions, netWorthSnapshots, accounts } from "./schema";
-import { eq, and, gte, lte, sql, desc, ne } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, ne, inArray } from "drizzle-orm";
 import { getSpendingByCategory } from "./budgets";
 import { listBudgetsWithSpending } from "./budgets";
+import { getIncomeSourceDescriptions } from "./reports";
 
 export async function getDashboardData(userId: string) {
   const now = new Date();
@@ -11,10 +12,29 @@ export async function getDashboardData(userId: string) {
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
 
-  // Total income and expenses this month
-  const [monthlyAggs] = await db
+  // Fetch income source filter (same pattern as reports.ts)
+  const sourcesFilter = await getIncomeSourceDescriptions(userId);
+
+  // Total income (filtered by income sources if configured)
+  const [incomeAgg] = await db
     .select({
-      totalIncome: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount} > 0 AND ${transactions.category}::text != 'Transfer' THEN ${transactions.amount} ELSE 0 END), 0)`,
+      totalIncome: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.date, firstDay),
+        lte(transactions.date, lastDay),
+        sql`${transactions.amount} > 0`,
+        ne(transactions.category, "Transfer"),
+        ...(sourcesFilter.length > 0 ? [inArray(transactions.description, sourcesFilter)] : [])
+      )
+    );
+
+  // Total expenses and tx count this month
+  const [expenseAgg] = await db
+    .select({
       totalExpenses: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.amount} < 0 AND ${transactions.category}::text != 'Transfer' THEN ABS(${transactions.amount}) ELSE 0 END), 0)`,
       txCount: sql<number>`COUNT(*)`,
     })
@@ -61,9 +81,9 @@ export async function getDashboardData(userId: string) {
   return {
     month,
     year,
-    totalIncome: parseFloat(monthlyAggs?.totalIncome ?? "0"),
-    totalExpenses: parseFloat(monthlyAggs?.totalExpenses ?? "0"),
-    txCount: Number(monthlyAggs?.txCount ?? 0),
+    totalIncome: parseFloat(incomeAgg?.totalIncome ?? "0"),
+    totalExpenses: parseFloat(expenseAgg?.totalExpenses ?? "0"),
+    txCount: Number(expenseAgg?.txCount ?? 0),
     recentTxs,
     latestSnapshot: latestSnapshot ?? null,
     budgetsWithSpending,

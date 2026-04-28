@@ -220,7 +220,7 @@ export async function getCashFlowData(
     .sort((a, b) => b.amount - a.amount);
 
   const totalExpenses = byCategory.reduce((s, r) => s + r.amount, 0);
-  const netSavings = Math.max(0, totalIncome - totalExpenses);
+  const netSavings = totalIncome - totalExpenses; // allow negative to show deficit
   const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
 
   return { totalIncome, totalExpenses, netSavings, savingsRate, byCategory };
