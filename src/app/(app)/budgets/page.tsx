@@ -42,11 +42,11 @@ export default async function BudgetsPage({
   const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
   const daysLeft = isCurrentMonth ? daysInMonth - now.getDate() : 0;
 
-  let [budgets, topTxByCategory, alerts] = await Promise.all([
-    listBudgetsWithSpending(session.user.id, month, year),
+  const [topTxByCategory, alerts] = await Promise.all([
     getTopTransactionsByCategory(session.user.id, month, year, 5),
     getSpendingAlerts(session.user.id),
   ]);
+  let budgets = await listBudgetsWithSpending(session.user.id, month, year);
 
   // Auto-copy budgets from last month if this month has none (carry-forward)
   if (budgets.length === 0) {

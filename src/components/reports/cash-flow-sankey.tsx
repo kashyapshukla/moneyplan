@@ -91,7 +91,6 @@ export function CashFlowSankey({ data, label }: Props) {
   }
 
   const isDeficit = netSavings < 0;
-  const DEFICIT_COLOR = "#ef4444";
 
   // Build right-column nodes: savings first (top), then expenses sorted desc
   const rightNodes: { label: string; amount: number; color: string; key: string }[] = [];
